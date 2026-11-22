@@ -1,0 +1,17 @@
+{
+  "name": "@fairclaim/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fairclaim/schemas": "0.1.0"
+  }
+}

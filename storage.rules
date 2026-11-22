@@ -1,0 +1,52 @@
+rules_version = '2';
+
+// PLAN §22.5. Only small JPEGs, create-once, no listing. Ownership comes from
+// Firestore (cross-service rules): challenges/{claimId} names the customer and
+// the restaurant; orders/{orderId} names the restaurant.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function challenge(claimId) {
+      return firestore.get(/databases/(default)/documents/challenges/$(claimId)).data;
+    }
+    function isParty(claimId) {
+      return challenge(claimId).customerId == request.auth.uid || challenge(claimId).restaurantId == request.auth.uid;
+    }
+    function jpegUnder(kb) {
+      return request.resource.contentType == 'image/jpeg' && request.resource.size < kb * 1024;
+    }
+
+    // Damage crop: the only claim image that leaves the phone on a Nano device (§10).
+    match /claims/{claimId}/crop.jpg {
+      function canUploadCrop() {
+        return challenge(claimId).customerId == request.auth.uid
+          && request.time < challenge(claimId).issuedAt + duration.value(120, 's');
+      }
+      allow create: if signedIn() && resource == null && jpegUnder(300) && canUploadCrop();
+      allow get: if signedIn() && isParty(claimId);
+      allow delete: if signedIn() && challenge(claimId).customerId == request.auth.uid;
+      allow update, list: if false;
+    }
+
+    // Optional low-res dispatch thumbnail for the restaurant's own view.
+    match /dispatch/{orderId}/thumb.jpg {
+      function isRestaurant() {
+        return firestore.get(/databases/(default)/documents/orders/$(orderId)).data.restaurantId == request.auth.uid;
+      }
+      allow create: if signedIn() && resource == null && jpegUnder(60) && isRestaurant();
+      allow get: if signedIn() && isRestaurant();
+      allow update, delete, list: if false;
+    }
+
+    // Restaurant counter-evidence photo for a hold (Flow E).
+    match /counter/{claimId}/photo.jpg {
+      allow create: if signedIn() && resource == null && jpegUnder(300) && challenge(claimId).restaurantId == request.auth.uid;
+      allow get: if signedIn() && isParty(claimId);
+      allow update, delete, list: if false;
+    }
+
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/claim-evidence.json",
+  "title": "ClaimEvidence as submitted by the customer app (createdAt is added as a server timestamp)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["claimId", "orderId", "customerId", "issueType", "selectedItemIds", "challenge", "challengeCheck", "damageCheck", "moireScore", "cropSha256", "cropRef", "inferenceSources", "customerClaims30d"],
+  "properties": {
+    "claimId": { "$ref": "defs.json#/$defs/id" },
+    "orderId": { "$ref": "defs.json#/$defs/id" },
+    "customerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+    "issueType": { "enum": ["damaged", "missing", "wrong_item"] },
+    "selectedItemIds": { "type": "array", "minItems": 1, "maxItems": 5, "uniqueItems": true, "items": { "$ref": "defs.json#/$defs/id" } },
+    "challenge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "code", "fingers", "issuedAt", "capturedAt", "expiresAt"],
+      "properties": {
+        "kind": { "const": "fingers" },
+        "code": { "$ref": "defs.json#/$defs/sealCode" },
+        "fingers": { "type": "integer", "minimum": 1, "maximum": 3 },
+        "issuedAt": { "type": "integer", "minimum": 0 },
+        "capturedAt": { "type": "integer", "minimum": 0 },
+        "expiresAt": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "challengeCheck": { "$ref": "challenge-check.json" },
+    "damageCheck": { "oneOf": [{ "type": "null" }, { "$ref": "damage-check.json" }] },
+    "moireScore": { "type": "number", "minimum": 0, "maximum": 1 },
+    "cropSha256": { "oneOf": [{ "type": "null" }, { "$ref": "defs.json#/$defs/sha256" }] },
+    "cropRef": { "oneOf": [{ "type": "null" }, { "type": "string", "pattern": "^claims/[A-Za-z0-9_-]{1,64}/crop\\.jpg$" }] },
+    "inferenceSources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["challenge", "damage"],
+      "properties": {
+        "challenge": { "$ref": "defs.json#/$defs/inferenceSource" },
+        "damage": { "oneOf": [{ "type": "null" }, { "$ref": "defs.json#/$defs/inferenceSource" }] }
+      }
+    },
+    "customerClaims30d": { "type": "integer", "minimum": 0, "maximum": 1000 }
+  }
+}

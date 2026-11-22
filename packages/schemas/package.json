@@ -1,0 +1,22 @@
+{
+  "name": "@fairclaim/schemas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schemas/*": "./schemas/*",
+    "./policy/*": "./policy/*",
+    "./test-vectors/*": "./test-vectors/*"
+  },
+  "scripts": {
+    "gen": "node scripts/gen-validators.mjs && node scripts/gen-vectors.mjs && node scripts/gen-remote-config.mjs",
+    "gen:check": "node scripts/gen-validators.mjs --check && node scripts/gen-vectors.mjs --check && node scripts/gen-remote-config.mjs --check",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  }
+}

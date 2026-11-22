@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/engine-decision.json",
+  "title": "Deterministic engine output (the stored Decision adds ids, review, explanations and createdAt)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["verdict", "refundAmount", "assessedAmount", "currency", "liability", "liabilityCase", "split", "reasons", "holdHours", "policyVersion"],
+  "properties": {
+    "verdict": { "enum": ["auto_refund", "hold", "review"] },
+    "refundAmount": { "$ref": "defs.json#/$defs/rupees" },
+    "assessedAmount": { "$ref": "defs.json#/$defs/rupees" },
+    "currency": { "const": "INR" },
+    "liability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["restaurant", "transit", "platform"],
+      "properties": {
+        "restaurant": { "$ref": "defs.json#/$defs/rupees" },
+        "transit": { "$ref": "defs.json#/$defs/rupees" },
+        "platform": { "$ref": "defs.json#/$defs/rupees" }
+      }
+    },
+    "liabilityCase": { "type": "string", "pattern": "^[a-z_]+$" },
+    "split": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["restaurantPermille", "transitPermille"],
+          "properties": {
+            "restaurantPermille": { "$ref": "defs.json#/$defs/permille" },
+            "transitPermille": { "$ref": "defs.json#/$defs/permille" }
+          }
+        }
+      ]
+    },
+    "reasons": { "type": "array", "maxItems": 30, "items": { "type": "string", "pattern": "^[a-z0-9_]+$" } },
+    "holdHours": { "oneOf": [{ "type": "null" }, { "type": "integer", "minimum": 1 }] },
+    "policyVersion": { "type": "string" }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/challenge-check.json",
+  "title": "ChallengeCheck (normalized)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["seal_code_read", "fingers_visible", "seal_state", "photo_of_screen_suspected", "confidence"],
+  "properties": {
+    "seal_code_read": { "$ref": "defs.json#/$defs/sealCodeRead" },
+    "fingers_visible": { "type": "integer", "minimum": 0, "maximum": 10 },
+    "seal_state": { "$ref": "defs.json#/$defs/sealState" },
+    "photo_of_screen_suspected": { "type": "boolean" },
+    "confidence": { "$ref": "defs.json#/$defs/confidence" }
+  }
+}

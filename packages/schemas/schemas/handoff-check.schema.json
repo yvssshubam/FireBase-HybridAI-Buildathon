@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/handoff-check.json",
+  "title": "HandoffCheck (normalized)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["seal_state", "seal_code_read", "confidence"],
+  "properties": {
+    "seal_state": { "$ref": "defs.json#/$defs/sealState" },
+    "seal_code_read": { "$ref": "defs.json#/$defs/sealCodeRead" },
+    "confidence": { "$ref": "defs.json#/$defs/confidence" }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/review.json",
+  "title": "Review (cloud consistency check + explanations; never sets money)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["consistent", "flags", "explanation_customer_en", "explanation_customer_hi", "explanation_customer_ta", "explanation_restaurant"],
+  "properties": {
+    "consistent": { "type": "boolean" },
+    "flags": {
+      "type": "array",
+      "maxItems": 6,
+      "uniqueItems": true,
+      "items": { "enum": ["claimed_item_not_in_order", "issue_type_inconsistent", "dispatch_contradiction", "handoff_contradiction", "timeline_inconsistent", "other"] }
+    },
+    "explanation_customer_en": { "type": "string", "maxLength": 600 },
+    "explanation_customer_hi": { "type": "string", "maxLength": 600 },
+    "explanation_customer_ta": { "type": "string", "maxLength": 600 },
+    "explanation_restaurant": { "type": "string", "maxLength": 600 }
+  }
+}

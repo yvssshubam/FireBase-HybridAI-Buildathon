@@ -1,0 +1,31 @@
+node_modules/
+dist/
+build/
+coverage/
+.vercel/
+
+# Secrets and local config — never commit
+.env
+.env.*
+!.env.example
+google-services.json
+GoogleService-Info.plist
+*.keystore
+*.jks
+service-account*.json
+
+# Firebase emulator output
+*-debug.log
+firebase-debug.*.log
+.firebase/
+
+# Gradle / Android
+.gradle/
+local.properties
+*.iml
+.idea/
+captures/
+.kotlin/
+
+.DS_Store
+rules-output.txt

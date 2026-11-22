@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/defs.json",
+  "$defs": {
+    "confidence": { "enum": ["high", "medium", "low"] },
+    "sealCodeRead": { "type": "string", "pattern": "^([0-9]{4})?$" },
+    "sealCode": { "type": "string", "pattern": "^[0-9]{4}$" },
+    "sealState": { "enum": ["intact", "broken", "not_visible"] },
+    "inferenceSource": { "enum": ["ON_DEVICE", "IN_CLOUD"] },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$" },
+    "rupees": { "type": "integer", "minimum": 0, "maximum": 1000000 },
+    "permille": { "type": "integer", "minimum": 0, "maximum": 1000 }
+  }
+}

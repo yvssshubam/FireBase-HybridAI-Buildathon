@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/policy.json",
+  "title": "Refund policy (Remote Config `policy_json`, mirrored to Firestore config/policy)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["policyVersion", "currency", "autoApproveCap", "claimHistoryLimit30d", "challengeWindowSec", "moireThreshold", "severityPermille", "handlingDamageLiable", "holdHours", "holdSplit", "counterEvidence"],
+  "properties": {
+    "policyVersion": { "type": "string", "pattern": "^v[0-9]+$" },
+    "currency": { "const": "INR" },
+    "autoApproveCap": { "$ref": "defs.json#/$defs/rupees" },
+    "claimHistoryLimit30d": { "type": "integer", "minimum": 1, "maximum": 100 },
+    "challengeWindowSec": { "type": "integer", "minimum": 10, "maximum": 120 },
+    "moireThreshold": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+    "severityPermille": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minor", "partial", "total", "missing", "wrong_item"],
+      "properties": {
+        "minor": { "$ref": "defs.json#/$defs/permille" },
+        "partial": { "$ref": "defs.json#/$defs/permille" },
+        "total": { "$ref": "defs.json#/$defs/permille" },
+        "missing": { "$ref": "defs.json#/$defs/permille" },
+        "wrong_item": { "$ref": "defs.json#/$defs/permille" }
+      }
+    },
+    "handlingDamageLiable": { "enum": ["restaurant", "transit", "platform"] },
+    "holdHours": { "type": "integer", "minimum": 1, "maximum": 168 },
+    "holdSplit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseRestaurantPermille", "maxShiftPermille", "confidenceWeightPermille"],
+      "properties": {
+        "baseRestaurantPermille": { "$ref": "defs.json#/$defs/permille" },
+        "maxShiftPermille": { "$ref": "defs.json#/$defs/permille" },
+        "confidenceWeightPermille": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["high", "medium", "low"],
+          "properties": {
+            "high": { "$ref": "defs.json#/$defs/permille" },
+            "medium": { "$ref": "defs.json#/$defs/permille" },
+            "low": { "$ref": "defs.json#/$defs/permille" }
+          }
+        }
+      }
+    },
+    "counterEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["restaurantPermilleAfterClear"],
+      "properties": { "restaurantPermilleAfterClear": { "$ref": "defs.json#/$defs/permille" } }
+    }
+  }
+}

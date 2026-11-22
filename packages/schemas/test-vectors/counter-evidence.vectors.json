@@ -1,0 +1,1246 @@
+[
+  {
+    "name": "counter: clear photo settles a no-dispatch damage hold on transit",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "settled",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 108,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_clear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: medium confidence is not clear → human review",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "medium"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_unclear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: wrong seal code → human review",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4712",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_unclear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: seal not intact → human review",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": false,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_unclear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: damage visible in counter photo → human review",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": true,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_unclear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: settles an uncertain-dispatch damage hold",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": {
+        "check": {
+          "seal_intact": true,
+          "seal_code_read": "4721",
+          "visible_item_count": 3,
+          "visible_items": [
+            "Chicken Biryani",
+            "Gulab Jamun",
+            "Raita"
+          ],
+          "spill_or_damage_visible": false,
+          "confidence": "medium"
+        }
+      },
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "settled",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 0,
+        "transit": 108,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_clear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: cannot resolve the packed-and-sealed contradiction",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": {
+        "check": {
+          "seal_intact": true,
+          "seal_code_read": "4721",
+          "visible_item_count": 3,
+          "visible_items": [
+            "Chicken Biryani",
+            "Gulab Jamun",
+            "Raita"
+          ],
+          "spill_or_damage_visible": false,
+          "confidence": "high"
+        }
+      },
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "missing",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": null,
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 180,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_cannot_resolve_contradiction"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: conflicts with own dispatch photo (item absent)",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": {
+        "check": {
+          "seal_intact": true,
+          "seal_code_read": "4721",
+          "visible_item_count": 2,
+          "visible_items": [
+            "Chicken Biryani",
+            "Raita"
+          ],
+          "spill_or_damage_visible": false,
+          "confidence": "high"
+        }
+      },
+      "handoff": null,
+      "claim": {
+        "issueType": "missing",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": null,
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 180,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_conflicts_dispatch"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: clear photo settles a no-dispatch missing hold",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "missing",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": null,
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "settled",
+      "refundAmount": 180,
+      "liability": {
+        "restaurant": 0,
+        "transit": 180,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_clear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: claimed item not visible in counter photo",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "missing",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": null,
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 2,
+      "visible_items": [
+        "Chicken Biryani",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "review",
+      "refundAmount": 180,
+      "liability": {
+        "restaurant": 0,
+        "transit": 0,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_unclear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: policy can keep part of the restaurant share",
+    "policyPatch": {
+      "counterEvidence": {
+        "restaurantPermilleAfterClear": 250
+      }
+    },
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": null,
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "outcome": "settled",
+      "refundAmount": 108,
+      "liability": {
+        "restaurant": 27,
+        "transit": 81,
+        "platform": 0
+      },
+      "reasons": [
+        "counter_evidence_clear"
+      ],
+      "policyVersion": "v1"
+    }
+  },
+  {
+    "name": "counter: not allowed on an auto refund",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": {
+        "check": {
+          "seal_intact": true,
+          "seal_code_read": "4721",
+          "visible_item_count": 3,
+          "visible_items": [
+            "Chicken Biryani",
+            "Gulab Jamun",
+            "Raita"
+          ],
+          "spill_or_damage_visible": false,
+          "confidence": "high"
+        }
+      },
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 2,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "error": "not_hold"
+    }
+  },
+  {
+    "name": "counter: not allowed on a review decision",
+    "input": {
+      "order": {
+        "id": "order-1",
+        "items": [
+          {
+            "id": "biryani",
+            "name": "Chicken Biryani",
+            "price": 380
+          },
+          {
+            "id": "gulab-jamun",
+            "name": "Gulab Jamun",
+            "price": 180
+          },
+          {
+            "id": "raita",
+            "name": "Raita",
+            "price": 80
+          }
+        ],
+        "total": 640,
+        "sealCode": "4721"
+      },
+      "dispatch": {
+        "check": {
+          "seal_intact": true,
+          "seal_code_read": "4721",
+          "visible_item_count": 3,
+          "visible_items": [
+            "Chicken Biryani",
+            "Gulab Jamun",
+            "Raita"
+          ],
+          "spill_or_damage_visible": false,
+          "confidence": "high"
+        }
+      },
+      "handoff": {
+        "check": {
+          "seal_state": "intact",
+          "seal_code_read": "4721",
+          "confidence": "high"
+        }
+      },
+      "claim": {
+        "issueType": "damaged",
+        "selectedItemIds": [
+          "gulab-jamun"
+        ],
+        "challenge": {
+          "kind": "fingers",
+          "code": "4721",
+          "fingers": 2,
+          "issuedAt": 1700000000000,
+          "capturedAt": 1700000020000,
+          "expiresAt": 1700000060000
+        },
+        "challengeCheck": {
+          "seal_code_read": "4721",
+          "fingers_visible": 1,
+          "seal_state": "broken",
+          "photo_of_screen_suspected": false,
+          "confidence": "high"
+        },
+        "damageCheck": {
+          "matched_item": "Gulab Jamun",
+          "issue": "spilled",
+          "severity": "partial",
+          "confidence": "medium"
+        },
+        "moireScore": 0.1,
+        "customerClaims30d": 0
+      },
+      "review": {
+        "status": "ok",
+        "consistent": true,
+        "flags": []
+      }
+    },
+    "counterCheck": {
+      "seal_intact": true,
+      "seal_code_read": "4721",
+      "visible_item_count": 3,
+      "visible_items": [
+        "Chicken Biryani",
+        "Gulab Jamun",
+        "Raita"
+      ],
+      "spill_or_damage_visible": false,
+      "confidence": "high"
+    },
+    "expected": {
+      "error": "not_hold"
+    }
+  }
+]

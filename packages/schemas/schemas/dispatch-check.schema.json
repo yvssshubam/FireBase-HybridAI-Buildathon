@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/dispatch-check.json",
+  "title": "DispatchCheck (normalized)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["seal_intact", "seal_code_read", "visible_item_count", "visible_items", "spill_or_damage_visible", "confidence"],
+  "properties": {
+    "seal_intact": { "type": "boolean" },
+    "seal_code_read": { "$ref": "defs.json#/$defs/sealCodeRead" },
+    "visible_item_count": { "type": "integer", "minimum": 0, "maximum": 50 },
+    "visible_items": { "type": "array", "maxItems": 20, "items": { "type": "string", "minLength": 1, "maxLength": 60 } },
+    "spill_or_damage_visible": { "type": "boolean" },
+    "confidence": { "$ref": "defs.json#/$defs/confidence" }
+  }
+}

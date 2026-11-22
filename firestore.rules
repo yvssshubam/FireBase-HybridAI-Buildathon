@@ -1,0 +1,391 @@
+rules_version = '2';
+
+// FairClaim Firestore rules. PLAN §10, §11, §22.1, §22.2 + the Nov 22 decisions:
+// sandbox restaurant per web session (id == owner uid) paired by a 6-char code,
+// immutable evidence and decisions, side records for counter-evidence/audits.
+// Every rule here has a case in rules-tests/.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- helpers ----------
+    function signedIn() { return request.auth != null; }
+    function uid() { return request.auth.uid; }
+    // One $() per path segment: $('a/b') would be a single segment named "a/b".
+    function doc(collection, id) { return /databases/$(database)/documents/$(collection)/$(id); }
+    function isInt(v, lo, hi) { return v is int && v >= lo && v <= hi; }
+    function isStr(v, lo, hi) { return v is string && v.size() >= lo && v.size() <= hi; }
+    function exactKeys(m, keys) { return m.keys().hasOnly(keys) && m.keys().hasAll(keys); }
+    function isId(v) { return v is string && v.matches('^[A-Za-z0-9_-]{1,64}$'); }
+    function confidence(v) { return v in ['high', 'medium', 'low']; }
+    function sealRead(v) { return v is string && v.matches('^([0-9]{4})?$'); }
+    function sealState(v) { return v in ['intact', 'broken', 'not_visible']; }
+    function inferenceSource(v) { return v in ['ON_DEVICE', 'IN_CLOUD']; }
+    function sha256(v) { return v is string && v.matches('^[0-9a-f]{64}$'); }
+    function policy() { return get(doc('config', 'policy')).data; }
+    function holdEnds(h) { return h.createdAt + duration.value(h.holdHours, 'h'); }
+    function amountsOk(m) {
+      return exactKeys(m, ['restaurant', 'transit', 'platform'])
+        && isInt(m.restaurant, 0, 1000000) && isInt(m.transit, 0, 1000000) && isInt(m.platform, 0, 1000000);
+    }
+    function sum(m) { return m.restaurant + m.transit + m.platform; }
+    function onlyChanged(keys) { return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys); }
+    function orderOf(orderId) { return get(doc('orders', orderId)).data; }
+    function isPartyOf(o) { return o.customerId == uid() || o.restaurantId == uid(); }
+    function claimable(o) { return o.status in ['dispatched', 'delivered']; }
+
+    // Normalized model outputs (packages/schemas/schemas/*.schema.json).
+    function validDispatchCheck(c) {
+      return c is map
+        && exactKeys(c, ['seal_intact', 'seal_code_read', 'visible_item_count', 'visible_items', 'spill_or_damage_visible', 'confidence'])
+        && c.seal_intact is bool && sealRead(c.seal_code_read) && isInt(c.visible_item_count, 0, 50)
+        && c.visible_items is list && c.visible_items.size() <= 20
+        && c.spill_or_damage_visible is bool && confidence(c.confidence);
+    }
+    function validHandoffCheck(c) {
+      return c is map && exactKeys(c, ['seal_state', 'seal_code_read', 'confidence'])
+        && sealState(c.seal_state) && sealRead(c.seal_code_read) && confidence(c.confidence);
+    }
+    function validChallengeCheck(c) {
+      return c is map
+        && exactKeys(c, ['seal_code_read', 'fingers_visible', 'seal_state', 'photo_of_screen_suspected', 'confidence'])
+        && sealRead(c.seal_code_read) && isInt(c.fingers_visible, 0, 10) && sealState(c.seal_state)
+        && c.photo_of_screen_suspected is bool && confidence(c.confidence);
+    }
+    function validDamageCheck(c) {
+      return c is map && exactKeys(c, ['matched_item', 'issue', 'severity', 'confidence'])
+        && isStr(c.matched_item, 0, 240)
+        && c.issue in ['spilled', 'crushed', 'missing', 'wrong_item', 'foreign_object', 'none']
+        && c.severity in ['none', 'minor', 'partial', 'total'] && confidence(c.confidence);
+    }
+
+    // ---------- users (terms acceptance, §23) ----------
+    match /users/{userId} {
+      function validUser(d) {
+        return exactKeys(d, ['termsVersion', 'acceptedAt', 'role'])
+          && isStr(d.termsVersion, 1, 20) && d.acceptedAt == request.time && d.role in ['customer', 'restaurant'];
+      }
+      allow read, delete: if signedIn() && uid() == userId;
+      allow create, update: if signedIn() && uid() == userId && validUser(request.resource.data);
+    }
+
+    // ---------- restaurants: one sandbox per web session, id == owner uid ----------
+    match /restaurants/{restaurantId} {
+      function validRestaurant(d) {
+        return isStr(d.name, 1, 60) && d.menu is map && d.menu.size() >= 1 && d.menu.size() <= 12;
+      }
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && uid() == restaurantId
+        && exactKeys(request.resource.data, ['name', 'pairCode', 'menu', 'createdAt'])
+        && validRestaurant(request.resource.data)
+        && request.resource.data.createdAt == request.time
+        && getAfter(doc('pairCodes', request.resource.data.pairCode)).data.restaurantId == restaurantId;
+      allow update: if signedIn() && uid() == restaurantId && onlyChanged(['name', 'menu'])
+        && validRestaurant(request.resource.data);
+      allow delete: if false;
+    }
+
+    match /pairCodes/{code} {
+      allow get: if signedIn();
+      allow list: if false;
+      allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{6}$')
+        && exactKeys(request.resource.data, ['restaurantId'])
+        && request.resource.data.restaurantId == uid()
+        && getAfter(doc('restaurants', uid())).data.pairCode == code;
+      allow update, delete: if false;
+    }
+
+    // ---------- orders: customer places from the menu, restaurant dispatches ----------
+    match /orders/{orderId} {
+      // Up to 5 lines; names and prices must equal the restaurant's menu.
+      function lineOk(d, menu, i) {
+        return d.items.size() <= i || (
+          d.items[i] is map && exactKeys(d.items[i], ['id', 'name', 'price'])
+          && d.items[i].id == d.itemIds[i] && d.items[i].id in menu
+          && d.items[i].name == menu[d.items[i].id].name
+          && d.items[i].price is int && d.items[i].price == menu[d.items[i].id].price
+        );
+      }
+      function price(d, i) { return d.items.size() > i ? d.items[i].price : 0; }
+      function validNewOrder(d) {
+        let menu = get(doc('restaurants', d.restaurantId)).data.menu;
+        return exactKeys(d, ['restaurantId', 'customerId', 'items', 'itemIds', 'total', 'status', 'sealCode', 'createdAt'])
+          && isId(d.restaurantId) && d.customerId == uid() && d.status == 'placed' && d.sealCode == null
+          && d.createdAt == request.time
+          && d.items is list && d.items.size() >= 1 && d.items.size() <= 5
+          && d.itemIds is list && d.itemIds.size() == d.items.size() && d.itemIds.toSet().size() == d.itemIds.size()
+          && lineOk(d, menu, 0) && lineOk(d, menu, 1) && lineOk(d, menu, 2) && lineOk(d, menu, 3) && lineOk(d, menu, 4)
+          && d.total == price(d, 0) + price(d, 1) + price(d, 2) + price(d, 3) + price(d, 4);
+      }
+      allow read: if signedIn() && (resource.data.customerId == uid() || resource.data.restaurantId == uid());
+      allow create: if signedIn() && isId(orderId) && validNewOrder(request.resource.data);
+      allow update: if signedIn() && (
+        // Flow A: restaurant generates the seal code and dispatches.
+        (resource.data.restaurantId == uid() && resource.data.status == 'placed'
+          && onlyChanged(['status', 'sealCode', 'dispatchedAt'])
+          && request.resource.data.status == 'dispatched'
+          && request.resource.data.sealCode is string && request.resource.data.sealCode.matches('^[0-9]{4}$')
+          && request.resource.data.dispatchedAt == request.time)
+        // Customer confirms delivery.
+        || (resource.data.customerId == uid() && resource.data.status == 'dispatched'
+          && onlyChanged(['status', 'deliveredAt'])
+          && request.resource.data.status == 'delivered' && request.resource.data.deliveredAt == request.time)
+      );
+      allow delete: if false;
+    }
+
+    // ---------- evidence (immutable) ----------
+    match /dispatch/{orderId} {
+      function canCreateDispatch(d) {
+        let o = getAfter(doc('orders', orderId)).data;
+        return o.restaurantId == uid() && o.status == 'dispatched'
+          && !exists(doc('claimsByOrder', orderId))
+          && exactKeys(d, ['check', 'inferenceSource', 'imageSha256', 'thumbRef', 'capturedAt', 'recordedAt'])
+          && validDispatchCheck(d.check)
+          // Default 4: only an intact seal with the right code is accepted as dispatch evidence.
+          && d.check.seal_intact == true && d.check.seal_code_read == o.sealCode
+          && inferenceSource(d.inferenceSource) && sha256(d.imageSha256)
+          && (d.thumbRef == null || d.thumbRef == 'dispatch/' + orderId + '/thumb.jpg')
+          && d.capturedAt is int && d.recordedAt == request.time;
+      }
+      allow read: if signedIn() && isPartyOf(orderOf(orderId));
+      allow create: if signedIn() && canCreateDispatch(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    match /handoff/{orderId} {
+      function canCreateHandoff(d) {
+        let o = orderOf(orderId);
+        return o.customerId == uid() && claimable(o)
+          // Must be taken before the bag is opened, i.e. before any claim.
+          && !exists(doc('claimsByOrder', orderId))
+          && exactKeys(d, ['check', 'inferenceSource', 'capturedAt', 'recordedAt'])
+          && validHandoffCheck(d.check) && inferenceSource(d.inferenceSource)
+          && d.capturedAt is int && d.recordedAt == request.time;
+      }
+      allow read: if signedIn() && isPartyOf(orderOf(orderId));
+      allow create: if signedIn() && canCreateHandoff(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Server-clock challenge: issuedAt is forced to request.time (§22.2).
+    match /challenges/{claimId} {
+      function canCreateChallenges(d) {
+        let o = orderOf(d.orderId);
+        return exactKeys(d, ['customerId', 'orderId', 'restaurantId', 'kind', 'fingers', 'issuedAt'])
+          && d.customerId == uid() && o.customerId == uid() && claimable(o)
+          && d.restaurantId == o.restaurantId
+          && d.kind == 'fingers' && isInt(d.fingers, 1, 3) && d.issuedAt == request.time;
+      }
+      allow read: if signedIn() && (resource.data.customerId == uid() || resource.data.restaurantId == uid());
+      allow create: if signedIn() && isId(claimId) && isId(request.resource.data.orderId) && canCreateChallenges(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // ---------- claims: throttled, one per order, inside the server-clock window ----------
+    match /claims/{claimId} {
+      function validClaimShape(d) {
+        return exactKeys(d, ['claimId', 'orderId', 'customerId', 'issueType', 'selectedItemIds', 'challenge', 'challengeCheck',
+                             'damageCheck', 'moireScore', 'cropSha256', 'cropRef', 'inferenceSources', 'customerClaims30d', 'createdAt'])
+          && d.claimId == claimId && isId(d.orderId) && d.customerId == uid()
+          && d.issueType in ['damaged', 'missing', 'wrong_item']
+          && d.selectedItemIds is list && d.selectedItemIds.size() >= 1 && d.selectedItemIds.size() <= 5
+          && d.challenge is map && exactKeys(d.challenge, ['kind', 'code', 'fingers', 'issuedAt', 'capturedAt', 'expiresAt'])
+          && d.challenge.kind == 'fingers' && isInt(d.challenge.fingers, 1, 3)
+          && d.challenge.issuedAt is int && d.challenge.capturedAt is int && d.challenge.expiresAt is int
+          && validChallengeCheck(d.challengeCheck)
+          && (d.damageCheck == null || validDamageCheck(d.damageCheck))
+          && d.moireScore is number && d.moireScore >= 0 && d.moireScore <= 1
+          && (d.cropSha256 == null) == (d.cropRef == null)
+          && (d.cropRef == null || (sha256(d.cropSha256) && d.cropRef == 'claims/' + claimId + '/crop.jpg'))
+          // Damage and wrong-item checks run on the tap crop, so it must be there.
+          && (d.issueType == 'missing' || (d.damageCheck != null && d.cropRef != null))
+          && d.inferenceSources is map && exactKeys(d.inferenceSources, ['challenge', 'damage'])
+          && inferenceSource(d.inferenceSources.challenge)
+          && (d.inferenceSources.damage == null || inferenceSource(d.inferenceSources.damage))
+          && isInt(d.customerClaims30d, 0, 1000)
+          && d.createdAt == request.time;
+      }
+      function matchesChallengeAndOrder(d) {
+        let ch = get(doc('challenges', claimId)).data;
+        let o = orderOf(d.orderId);
+        return ch.customerId == uid() && ch.orderId == d.orderId && ch.fingers == d.challenge.fingers
+          && ch.issuedAt.toMillis() == d.challenge.issuedAt
+          && request.time < ch.issuedAt + duration.value(120, 's')
+          && o.customerId == uid() && claimable(o) && d.challenge.code == o.sealCode
+          && d.selectedItemIds.hasOnly(o.itemIds)
+          // Throttle (§22.1 L4): the same batch must bump rateLimits/{uid} and claim the order.
+          && getAfter(doc('rateLimits', uid())).data.lastClaimAt == request.time
+          && getAfter(doc('claimsByOrder', d.orderId)).data.claimId == claimId;
+      }
+      allow read: if signedIn() && (resource.data.customerId == uid() || orderOf(resource.data.orderId).restaurantId == uid());
+      allow create: if signedIn() && validClaimShape(request.resource.data)
+        && matchesChallengeAndOrder(request.resource.data);
+      allow update: if false;
+      // "Delete my data" (§23). claimsByOrder and rateLimits stay, so deleting can't reset limits.
+      allow delete: if signedIn() && resource.data.customerId == uid();
+    }
+
+    // Create-once marker = one claim per order.
+    match /claimsByOrder/{orderId} {
+      allow read: if signedIn() && resource.data.customerId == uid();
+      allow create: if signedIn()
+        && exactKeys(request.resource.data, ['claimId', 'customerId'])
+        && request.resource.data.customerId == uid()
+        && orderOf(orderId).customerId == uid()
+        && getAfter(doc('claims', request.resource.data.claimId)).data.orderId == orderId;
+      allow update, delete: if false;
+    }
+
+    // One claim per 30 s, at most 5 per UTC day.
+    match /rateLimits/{userId} {
+      allow read: if signedIn() && uid() == userId;
+      allow create: if signedIn() && uid() == userId
+        && exactKeys(request.resource.data, ['lastClaimAt', 'countToday'])
+        && request.resource.data.lastClaimAt == request.time
+        && request.resource.data.countToday == 1;
+      allow update: if signedIn() && uid() == userId
+        && exactKeys(request.resource.data, ['lastClaimAt', 'countToday'])
+        && request.resource.data.lastClaimAt == request.time
+        && request.time > resource.data.lastClaimAt + duration.value(30, 's')
+        && request.resource.data.countToday ==
+             (request.time.date() == resource.data.lastClaimAt.date() ? resource.data.countToday + 1 : 1)
+        && request.resource.data.countToday <= 5;
+      allow delete: if false;
+    }
+
+    // ---------- decisions: create-once, bounded (§22.2) ----------
+    match /decisions/{claimId} {
+      function validDecision(d, claim, o, cfg) {
+        return exactKeys(d, ['claimId', 'orderId', 'customerId', 'restaurantId', 'verdict', 'refundAmount', 'assessedAmount',
+                             'currency', 'liability', 'liabilityCase', 'split', 'reasons', 'holdHours', 'review',
+                             'explanations', 'engine', 'policyVersion', 'createdAt'])
+          && d.claimId == claimId && d.orderId == claim.orderId
+          && d.customerId == uid() && d.restaurantId == o.restaurantId
+          && d.verdict in ['auto_refund', 'hold', 'review']
+          && isInt(d.refundAmount, 0, o.total) && isInt(d.assessedAmount, 0, o.total)
+          && d.currency == 'INR'
+          && amountsOk(d.liability) && sum(d.liability) == d.refundAmount
+          && isStr(d.liabilityCase, 1, 60)
+          && d.reasons is list && d.reasons.size() <= 30
+          && d.review is map && d.review.status in ['ok', 'unavailable']
+          && d.explanations is map
+          && exactKeys(d.explanations, ['customer_en', 'customer_hi', 'customer_ta', 'restaurant'])
+          && isStr(d.explanations.customer_en, 0, 2400) && isStr(d.explanations.customer_hi, 0, 2400)
+          && isStr(d.explanations.customer_ta, 0, 2400) && isStr(d.explanations.restaurant, 0, 2400)
+          && d.engine in ['kotlin', 'ts']
+          && d.policyVersion == cfg.policyVersion
+          && d.createdAt == request.time
+          && (d.verdict != 'review' || (d.refundAmount == 0 && d.split == null && d.holdHours == null))
+          && (d.verdict != 'auto_refund' || (
+               d.refundAmount == d.assessedAmount && d.refundAmount <= cfg.autoApproveCap
+               && claim.challengeCheck.seal_code_read == o.sealCode
+               && d.split == null && d.holdHours == null))
+          && (d.verdict != 'hold' || (
+               d.refundAmount == d.assessedAmount && d.refundAmount <= cfg.autoApproveCap
+               && d.holdHours == cfg.holdHours && d.split is map
+               && getAfter(doc('holds', claimId)).data.amount == d.refundAmount));
+      }
+      function canCreateDecisions(d) {
+        let claim = getAfter(doc('claims', claimId)).data;
+        return claim.customerId == uid() && validDecision(d, claim, orderOf(claim.orderId), policy());
+      }
+      allow read: if signedIn() && (resource.data.customerId == uid() || resource.data.restaurantId == uid());
+      allow create: if signedIn() && canCreateDecisions(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // ---------- holds: proportionate hold with server-clock window ----------
+    match /holds/{claimId} {
+      function beforeEnd() { return request.time < holdEnds(resource.data); }
+      function transitionTo(state) {
+        return resource.data.state == 'held' && request.resource.data.state == state
+          && onlyChanged(['state', 'resolvedAt']) && request.resource.data.resolvedAt == request.time;
+      }
+      function canCreateHolds(d) {
+        let dec = getAfter(doc('decisions', claimId)).data;
+        return exactKeys(d, ['claimId', 'customerId', 'restaurantId', 'amount', 'parties', 'state', 'holdHours', 'createdAt'])
+          && d.claimId == claimId && d.customerId == uid()
+          && dec.customerId == uid() && dec.verdict == 'hold'
+          && d.restaurantId == dec.restaurantId && d.amount == dec.refundAmount && d.parties == dec.liability
+          && d.state == 'held' && d.holdHours == policy().holdHours && d.createdAt == request.time;
+      }
+      allow read: if signedIn() && (resource.data.customerId == uid() || resource.data.restaurantId == uid());
+      allow create: if signedIn() && canCreateHolds(request.resource.data);
+      allow update: if signedIn() && (
+        // Restaurant accepts the split before the window ends.
+        (resource.data.restaurantId == uid() && beforeEnd() && transitionTo('accepted'))
+        // Restaurant answers with counter-evidence (same batch as counterEvidence + resolutions).
+        || (resource.data.restaurantId == uid() && beforeEnd()
+            && (transitionTo('resolved') || transitionTo('escalated'))
+            && getAfter(doc('resolutions', claimId)).data.outcome ==
+                 (request.resource.data.state == 'resolved' ? 'settled' : 'review'))
+        // Nobody answered: either party's app settles it once the window has passed.
+        || ((resource.data.restaurantId == uid() || resource.data.customerId == uid())
+            && !beforeEnd() && transitionTo('settled'))
+      );
+      allow delete: if false;
+    }
+
+    // ---------- Flow E side records (restaurant, create-once) ----------
+    match /counterEvidence/{claimId} {
+      function counterHold() { return get(doc('holds', claimId)).data; }
+      function canCreateCounterEvidence(d) {
+        let h = counterHold();
+        return h.restaurantId == uid() && h.state == 'held' && request.time < holdEnds(h)
+          && exactKeys(d, ['claimId', 'restaurantId', 'check', 'inferenceSource', 'imageSha256', 'photoRef', 'recordedAt'])
+          && d.claimId == claimId && d.restaurantId == uid()
+          && validDispatchCheck(d.check) && inferenceSource(d.inferenceSource) && sha256(d.imageSha256)
+          && d.photoRef == 'counter/' + claimId + '/photo.jpg'
+          && d.recordedAt == request.time
+          && existsAfter(doc('resolutions', claimId));
+      }
+      allow read: if signedIn() && (counterHold().restaurantId == uid() || counterHold().customerId == uid());
+      allow create: if signedIn() && canCreateCounterEvidence(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    match /resolutions/{claimId} {
+      function canCreateResolutions(d) {
+        let h = get(doc('holds', claimId)).data;
+        let dec = get(doc('decisions', claimId)).data;
+        return h.restaurantId == uid() && h.state == 'held' && request.time < holdEnds(h)
+          && exactKeys(d, ['claimId', 'restaurantId', 'customerId', 'outcome', 'refundAmount', 'liability', 'reasons', 'policyVersion', 'createdAt'])
+          && d.claimId == claimId && d.restaurantId == uid() && d.customerId == dec.customerId
+          && d.outcome in ['settled', 'review']
+          // The customer's refund never changes; only who pays it.
+          && d.refundAmount == dec.refundAmount
+          && amountsOk(d.liability)
+          && (d.outcome == 'settled' ? sum(d.liability) == d.refundAmount : sum(d.liability) == 0)
+          && d.reasons is list && d.reasons.size() <= 10
+          && d.policyVersion == dec.policyVersion && d.createdAt == request.time
+          && existsAfter(doc('counterEvidence', claimId));
+      }
+      allow read: if signedIn() && (resource.data.restaurantId == uid() || resource.data.customerId == uid());
+      allow create: if signedIn() && canCreateResolutions(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Restaurant-side replay audit (§22.2): TS engine re-run vs the stored decision.
+    match /audits/{claimId} {
+      function canCreateAudits(d) {
+        return get(doc('decisions', claimId)).data.restaurantId == uid()
+          && exactKeys(d, ['claimId', 'restaurantId', 'match', 'mismatchFields', 'cropHashMatch', 'policyVersion', 'auditedAt'])
+          && d.claimId == claimId && d.restaurantId == uid()
+          && d.match is bool && d.mismatchFields is list && d.mismatchFields.size() <= 20
+          && (d.cropHashMatch == null || d.cropHashMatch is bool)
+          && d.policyVersion is string && d.auditedAt == request.time;
+      }
+      allow read: if signedIn() && resource.data.restaurantId == uid();
+      allow create: if signedIn() && canCreateAudits(request.resource.data);
+      allow update, delete: if false;
+    }
+
+    // Policy mirror for rules; written only by scripts/seed-policy.mjs (Admin SDK).
+    match /config/{docId} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+  }
+}

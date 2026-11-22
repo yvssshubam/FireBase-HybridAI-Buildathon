@@ -1,0 +1,57 @@
+[
+  {
+    "a": "Chicken Biryani",
+    "b": "chicken biryani",
+    "expected": true
+  },
+  {
+    "a": "chicken biryani box",
+    "b": "Chicken Biryani",
+    "expected": true
+  },
+  {
+    "a": "Biryani",
+    "b": "Chicken Biryani",
+    "expected": true
+  },
+  {
+    "a": "Raita",
+    "b": "Boondi Raita",
+    "expected": true
+  },
+  {
+    "a": "Gulab-Jamun",
+    "b": "Gulab Jamun",
+    "expected": true
+  },
+  {
+    "a": "Butter Naan 2pc",
+    "b": "Naan",
+    "expected": true
+  },
+  {
+    "a": "rice",
+    "b": "Chicken Biryani",
+    "expected": false
+  },
+  {
+    "a": "an",
+    "b": "Naan",
+    "expected": false
+  },
+  {
+    "a": "",
+    "b": "Raita",
+    "expected": false
+  },
+  {
+    "a": "   ",
+    "b": "Raita",
+    "expected": false
+  },
+  {
+    "a": "दाल",
+    "b": "Dal",
+    "expected": false
+  }
+]

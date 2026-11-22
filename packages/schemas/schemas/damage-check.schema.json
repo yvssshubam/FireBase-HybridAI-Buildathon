@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://fairclaim.dev/schemas/damage-check.json",
+  "title": "DamageCheck (normalized, run on the tap crop)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["matched_item", "issue", "severity", "confidence"],
+  "properties": {
+    "matched_item": { "type": "string", "maxLength": 60 },
+    "issue": { "enum": ["spilled", "crushed", "missing", "wrong_item", "foreign_object", "none"] },
+    "severity": { "enum": ["none", "minor", "partial", "total"] },
+    "confidence": { "$ref": "defs.json#/$defs/confidence" }
+  }
+}
