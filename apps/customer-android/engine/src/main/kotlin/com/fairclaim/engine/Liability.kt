@@ -31,20 +31,10 @@ fun assignLiability(input: EngineInput, ev: Evidence): Liability {
         val lean = if (h.sealState == SealState.INTACT) Party.RESTAURANT else Party.TRANSIT
         return Liability.Hold("hold_no_dispatch", lean, h.confidence)
     }
-    val status = aggregateStatus(itemStatuses(d, input.order, input.claim.selectedItemIds))
-    if (h == null) {
-        if (status == ItemStatus.UNCLEAR) return Liability.Hold("hold_no_handoff")
-        val lean = if (status == ItemStatus.VISIBLE) Party.TRANSIT else Party.RESTAURANT
-        return Liability.Hold("hold_no_handoff", lean, d.confidence)
-    }
-    if (status == ItemStatus.UNCLEAR) return Liability.Hold("hold_item_status_unclear")
-    val intact = h.sealState == SealState.INTACT
-    return if (status == ItemStatus.VISIBLE) {
-        if (intact) Liability.Hold("hold_investigate_contradiction") else Liability.Clear(Party.TRANSIT, "transit_tamper")
-    } else {
-        if (intact) Liability.Clear(Party.RESTAURANT, "restaurant_not_packed")
-        else Liability.Hold("hold_absent_and_tampered", Party.RESTAURANT, d.confidence)
-    }
+    // Sealed with the right code at dispatch and still intact at handoff → never packed.
+    if (h == null) return Liability.Hold("hold_no_handoff")
+    return if (h.sealState == SealState.INTACT) Liability.Clear(Party.RESTAURANT, "restaurant_not_packed")
+    else Liability.Clear(Party.TRANSIT, "transit_tamper")
 }
 
 /** Confidence-weighted split: base ± maxShift × weight / 1000 toward the party the evidence points at. */

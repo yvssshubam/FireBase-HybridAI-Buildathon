@@ -25,8 +25,7 @@
   "claim_history_limit": "Too many claims in the last 30 days for an instant refund",
   "cloud_review_flagged": "Consistency review found a contradiction",
   "cloud_review_unavailable": "Consistency review could not be completed",
-  "counter_evidence_clear": "Restaurant counter-evidence shows the order packed and sealed correctly",
+  "counter_evidence_clear": "Restaurant counter-evidence shows the parcel sealed with the right code",
   "counter_evidence_unclear": "Restaurant counter-evidence was not clear enough",
-  "counter_evidence_conflicts_dispatch": "Counter-evidence conflicts with the restaurant's own dispatch photo",
-  "counter_evidence_cannot_resolve_contradiction": "Counter-evidence cannot resolve this contradiction"
+  "counter_evidence_repeats_dispatch": "The dispatch photo already shows this; a second photo can't add to it"
 }

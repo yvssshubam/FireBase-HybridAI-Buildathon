@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/src/legal.css" />
+    <title>Privacy | FairClaim</title>
+  </head>
+  <body>
+    <header><a class="home" href="/">FairClaim</a></header>
+    <main>
+      <h1>Privacy Policy</h1>
+      <p><span class="version">Version __TERMS_VERSION__</span> Last updated __LEGAL_LAST_UPDATED__</p>
+
+      <p class="note">FairClaim is a hackathon prototype. This policy describes exactly what the demo does with data; it has not been reviewed by a lawyer.</p>
+
+      <h2>1. What we collect</h2>
+      <ul>
+        <li>An anonymous user ID created by Firebase Authentication. No account, name or email.</li>
+        <li>Demo order data: menu items, prices, order status, the 4-digit seal code.</li>
+        <li>The results of each AI check as structured data (for example: seal intact, code read, items visible, damage severity), with time stamps.</li>
+        <li>For a claim: the small crop of the photo around the item the customer tapped. Not the full photo.</li>
+        <li>For a dispatch: a SHA-256 fingerprint of the photo and, optionally, a small low-resolution thumbnail for the restaurant's own view.</li>
+        <li>For counter-evidence on a held claim: the restaurant's photo, which the customer of that order can also see.</li>
+        <li>App Check attestation that requests come from the genuine FairClaim apps.</li>
+      </ul>
+      <p>
+        We don't collect names, phone numbers, addresses, location or contacts. Every prompt tells the model to ignore people in the photo, and there is no
+        face recognition.
+      </p>
+
+      <h2>2. Where photos are processed</h2>
+      <p>
+        <strong>On your device</strong> when it can run Gemini Nano (Chrome on a capable desktop, or a supported Android phone). The photo is checked locally
+        and doesn't leave the device for that check.
+      </p>
+      <p>
+        <strong>In the cloud</strong> otherwise. On the cloud fallback the photo for that check is sent to the Gemini API through Firebase AI Logic. FairClaim
+        doesn't store the full photo, but it does leave your device for that one check. Claim data (structured results only, no images) is also sent to Gemini
+        for the consistency review and the written explanations.
+      </p>
+      <p>
+        If the demo runs on the Gemini API's free tier, Google's
+        <a href="https://ai.google.dev/terms" rel="noopener">Gemini API Additional Terms</a> allow Google to use content sent to it, including that
+        photo, to improve its products, and human reviewers may read it. On a billed project Google states it doesn't use prompts or responses to improve its
+        products. Don't capture anything you wouldn't want reviewed.
+      </p>
+      <p>Everything FairClaim stores lives in Firebase (Google Cloud).</p>
+
+      <h2>3. Third parties</h2>
+      <ul>
+        <li>Google: Firebase (Authentication, Firestore, Storage, Remote Config, App Check, AI Logic), the Gemini API, reCAPTCHA Enterprise and Play Integrity.</li>
+        <li>Vercel: hosts this website's files and keeps standard request logs.</li>
+      </ul>
+
+      <h2>4. How long we keep it</h2>
+      <p>
+        Damage crops and counter-evidence photos are deleted automatically after 3 days. Claim and order data (structured results, no images) is kept until the
+        demo is retired.
+      </p>
+
+      <h2>5. Your choices</h2>
+      <p>
+        The Android app has a "Delete my data" button that deletes your claims, crops and user record. You can withdraw consent at any time by deleting your
+        data and stopping use. Clearing this site's data in your browser gives you a new anonymous ID.
+      </p>
+
+      <h2>6. Notice under India's Digital Personal Data Protection Act, 2023</h2>
+      <p>
+        This page and the acceptance screen in each app are FairClaim's notice and request for consent. The personal data processed is listed in section 1; it
+        is processed only to check evidence and decide simulated refunds. You can withdraw consent (section 5) and contact the grievance contact below about
+        access, correction or erasure.
+      </p>
+
+      <h2>7. Security</h2>
+      <p>
+        Requests must carry an App Check token from the genuine apps. Firestore and Storage security rules limit each party to its own orders and claims, make
+        evidence and decisions write-once, and cap amounts. All traffic is encrypted in transit.
+      </p>
+
+      <h2>8. Children</h2>
+      <p>FairClaim is not for anyone under 18.</p>
+
+      <h2>9. Contact and version</h2>
+      <p>
+        Grievance and privacy contact: <a href="mailto:__CONTACT_EMAIL__">__CONTACT_EMAIL__</a>. This is version __TERMS_VERSION__; when it changes, the apps
+        ask you to accept the new version.
+      </p>
+    </main>
+    <footer>
+      <a href="/">Back to FairClaim</a>
+      <a href="/terms">Terms</a>
+    </footer>
+  </body>
+</html>

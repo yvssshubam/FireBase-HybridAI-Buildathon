@@ -2,7 +2,7 @@
 // The claim photo's seal state is deliberately ignored: the customer always
 // breaks the seal to open the bag.
 import type { Confidence, EngineInput, Party, Policy, Split } from "@fairclaim/schemas";
-import { aggregateStatus, itemStatuses, type Evidence } from "./evidence.ts";
+import type { Evidence } from "./evidence.ts";
 
 export type Liability =
   | { kind: "clear"; party: Party; liabilityCase: string }
@@ -31,19 +31,13 @@ export function assignLiability(input: EngineInput, ev: Evidence): Liability {
   }
 
   // Missing / wrong item: tampering question, answered by dispatch seal vs handoff seal.
+  // Sealed with the right code at dispatch and still intact at handoff → never packed.
   if (!d) {
     if (!h) return hold("hold_no_dispatch");
     return hold("hold_no_dispatch", h.seal_state === "intact" ? "restaurant" : "transit", h.confidence);
   }
-  const status = aggregateStatus(itemStatuses(d, input.order, input.claim.selectedItemIds));
-  if (!h) {
-    if (status === "unclear") return hold("hold_no_handoff");
-    return hold("hold_no_handoff", status === "visible" ? "transit" : "restaurant", d.confidence);
-  }
-  if (status === "unclear") return hold("hold_item_status_unclear");
-  const intact = h.seal_state === "intact";
-  if (status === "visible") return intact ? hold("hold_investigate_contradiction") : clear("transit", "transit_tamper");
-  return intact ? clear("restaurant", "restaurant_not_packed") : hold("hold_absent_and_tampered", "restaurant", d.confidence);
+  if (!h) return hold("hold_no_handoff");
+  return h.seal_state === "intact" ? clear("restaurant", "restaurant_not_packed") : clear("transit", "transit_tamper");
 }
 
 /** Confidence-weighted split: base ± maxShift × weight / 1000 toward the party the evidence points at. */

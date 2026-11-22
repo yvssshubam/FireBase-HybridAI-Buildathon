@@ -23,12 +23,12 @@ sealed interface ModelParse {
     data class Err(val error: String, val detail: String = "") : ModelParse
 }
 
-private enum class Field { RAW, CODE, ENUM, TEXT60, TEXT600, ITEMS, FLAGS }
+private enum class Field { RAW, CODE, ENUM, TEXT60, TEXT600, FLAGS }
 
 private val FIELDS: Map<ModelKind, Map<String, Field>> = mapOf(
     ModelKind.DISPATCH to linkedMapOf(
-        "seal_intact" to Field.RAW, "seal_code_read" to Field.CODE, "visible_item_count" to Field.RAW,
-        "visible_items" to Field.ITEMS, "spill_or_damage_visible" to Field.RAW, "confidence" to Field.ENUM,
+        "seal_intact" to Field.RAW, "seal_code_read" to Field.CODE,
+        "spill_or_damage_visible" to Field.RAW, "confidence" to Field.ENUM,
     ),
     ModelKind.HANDOFF to linkedMapOf("seal_state" to Field.ENUM, "seal_code_read" to Field.CODE, "confidence" to Field.ENUM),
     ModelKind.CHALLENGE to linkedMapOf(
@@ -90,9 +90,6 @@ private fun normalize(field: Field, v: JsonElement): JsonElement = when (field) 
     Field.ENUM -> v.stringOrNull()?.let { JsonPrimitive(it.jsTrim().lowercase()) } ?: v
     Field.TEXT60 -> v.stringOrNull()?.let { JsonPrimitive(it.jsTrim().take(60)) } ?: v
     Field.TEXT600 -> v.stringOrNull()?.let { JsonPrimitive(it.jsTrim().take(600)) } ?: v
-    Field.ITEMS -> allStrings(v)?.let { items ->
-        JsonArray(items.map { it.jsTrim().take(60) }.filter { it.isNotEmpty() }.take(20).map(::JsonPrimitive))
-    } ?: v
     Field.FLAGS -> allStrings(v)?.let { flags ->
         val out = LinkedHashSet<String>()
         flags.forEach { f -> f.jsTrim().lowercase().let { out += if (it in REVIEW_FLAGS) it else "other" } }
@@ -112,10 +109,6 @@ private class Checker(val o: JsonObject) {
         val n = s?.codePointCount(0, s.length)
         if (n == null || n < min || n > max) fail("/$k must be a string of length [$min,$max]")
     }
-    fun stringList(k: String, maxItems: Int, minLen: Int, maxLen: Int) {
-        val items = o[k]?.let(::allStrings)
-        if (items == null || items.size > maxItems || items.any { it.codePointCount(0, it.length) !in minLen..maxLen }) fail("/$k invalid list")
-    }
     fun flags(k: String) {
         val items = o[k]?.let(::allStrings)
         if (items == null || items.size > 6 || items.toSet().size != items.size || items.any { it !in REVIEW_FLAGS }) fail("/$k invalid flags")
@@ -128,8 +121,7 @@ private fun validate(kind: ModelKind, o: JsonObject): String? {
     val c = Checker(o)
     when (kind) {
         ModelKind.DISPATCH -> {
-            c.bool("seal_intact"); c.code("seal_code_read"); c.int("visible_item_count", 0, 50)
-            c.stringList("visible_items", 20, 1, 60); c.bool("spill_or_damage_visible"); c.oneOf("confidence", CONFIDENCE)
+            c.bool("seal_intact"); c.code("seal_code_read"); c.bool("spill_or_damage_visible"); c.oneOf("confidence", CONFIDENCE)
         }
         ModelKind.HANDOFF -> { c.oneOf("seal_state", SEAL_STATES); c.code("seal_code_read"); c.oneOf("confidence", CONFIDENCE) }
         ModelKind.CHALLENGE -> {

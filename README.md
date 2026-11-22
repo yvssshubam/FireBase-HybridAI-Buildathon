@@ -54,20 +54,37 @@ Requirements: Node 24, JDK 21 (for the emulator and Gradle).
 
 ```bash
 npm ci
-npm run ci            # generated files up to date, lint, typecheck, TS engine + schema tests
+npm run ci            # generated files up to date, lint, typecheck, TS engine + schema + web unit tests
 npm run test:kotlin   # Kotlin engine + FFT against the same vectors
 npm run test:rules    # Firestore + Storage rules on the emulator
 npm run audit:prod
+npm run build && npm run check:dist   # web build (needs the VITE_* env vars) + scan for debug tokens/dev code
 ```
 
-## Setup
+## Restaurant web app (`apps/restaurant-web`)
 
-_Firebase project, App Check, Remote Config and Vercel steps — filled in as each phase lands._
+Vite + React + TypeScript. Every model call goes through `firebase/ai` (Firebase AI Logic):
+`DispatchCheck` uses `PREFER_ON_DEVICE` (Gemini Nano in Chrome, cloud fallback `gemini-3.5-flash-lite`) with structured
+output on both paths; an invalid answer gets one retry with an `ONLY_IN_CLOUD` model, then the staff are asked for a retake.
+
+```bash
+cp apps/restaurant-web/.env.example apps/restaurant-web/.env.local   # fill in your Firebase web config
+npm run dev:web                                                      # http://localhost:5173
+```
+
+- App Check: reCAPTCHA Enterprise in production; in `npm run dev:web` the App Check debug token is used (dev builds only; a
+  production build fails if `VITE_APPCHECK_DEBUG_TOKEN` is set).
+- Emulator mode: `VITE_USE_EMULATORS=true` + `npm run emulators`; see [`dev/README.md`](dev/README.md) for the customer simulator.
+- `/terms` and `/privacy` are static pages (`terms.html`, `privacy.html`), served by Vercel with `cleanUrls`.
+
+## Setup
 
 1. `npm run gen` regenerates validators, vectors and `remoteconfig.template.json` from `packages/schemas`.
 2. `firebase deploy --only firestore:rules,storage,remoteconfig` deploys rules and the policy.
 3. `npm run seed:policy -- <project-id>` mirrors the policy into Firestore `config/policy` for the rules.
 4. `gsutil lifecycle set storage.lifecycle.json gs://<bucket>` deletes crops and counter photos after 3 days.
+5. `gsutil cors set storage.cors.json gs://<bucket>` (after putting your Vercel domain in it) lets the restaurant app download
+   crops for the replay audit.
 
 ## Production note
 

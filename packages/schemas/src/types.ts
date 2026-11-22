@@ -20,11 +20,10 @@ export const REVIEW_FLAGS = [
 ] as const;
 export type ReviewFlag = (typeof REVIEW_FLAGS)[number];
 
+/** A sealed bag hides the food, so the dispatch photo answers only: sealed? which code? outside damage? */
 export interface DispatchCheck {
   seal_intact: boolean;
   seal_code_read: string;
-  visible_item_count: number;
-  visible_items: string[];
   spill_or_damage_visible: boolean;
   confidence: Confidence;
 }

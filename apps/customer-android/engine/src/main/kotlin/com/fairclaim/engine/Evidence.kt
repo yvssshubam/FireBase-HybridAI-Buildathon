@@ -1,7 +1,5 @@
 package com.fairclaim.engine
 
-enum class ItemStatus { VISIBLE, ABSENT, UNCLEAR }
-
 /** Usable dispatch/handoff evidence plus the fact codes reported in `reasons`. */
 data class Evidence(
     val dispatchFact: String,
@@ -30,24 +28,4 @@ fun classifyEvidence(input: EngineInput): Evidence {
         else -> "handoff_broken"
     }
     return Evidence(dispatchFact, if (dispatchValid) d else null, handoffFact, if (handoffUsable) h else null)
-}
-
-/** Per selected item: matched by name → visible; not matched and count short → absent; else unclear. */
-fun itemStatuses(check: DispatchCheck, order: Order, selectedIds: List<String>): List<ItemStatus> {
-    val countShort = check.visibleItemCount < order.items.size
-    return selectedIds.map { id ->
-        val item = order.items.firstOrNull { it.id == id }
-        when {
-            item == null -> ItemStatus.UNCLEAR
-            check.visibleItems.any { namesMatch(it, item.name) } -> ItemStatus.VISIBLE
-            countShort -> ItemStatus.ABSENT
-            else -> ItemStatus.UNCLEAR
-        }
-    }
-}
-
-/** All the same → that status; mixed → unclear. */
-fun aggregateStatus(statuses: List<ItemStatus>): ItemStatus {
-    val first = statuses.firstOrNull() ?: return ItemStatus.UNCLEAR
-    return if (statuses.all { it == first }) first else ItemStatus.UNCLEAR
 }

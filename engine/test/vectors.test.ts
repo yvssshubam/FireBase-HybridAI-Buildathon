@@ -41,9 +41,9 @@ describe("decision engine — shared vectors", () => {
     const rows = new Set(engineVectors.map((v) => v.matrixRow));
     const required = [
       "8.1", "8.3", "8.4", "8.2.key-rule",
-      "8.2.missing.1", "8.2.missing.2", "8.2.missing.3", "8.2.missing.4", "8.2.missing.5",
+      "8.2.missing.1", "8.2.missing.2", "8.2.missing.3", "8.2.missing.4",
       "8.2.damage.1", "8.2.damage.2", "8.2.damage.3", "8.2.damage.4",
-      "8.2.wrong.1", "8.2.wrong.2",
+      "8.2.wrong.1", "8.2.wrong.2", "8.2.wrong.3", "8.2.wrong.4",
       "default.1", "default.2", "default.3", "default.4", "default.5",
     ];
     expect(required.filter((r) => !rows.has(r))).toEqual([]);

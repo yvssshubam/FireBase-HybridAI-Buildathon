@@ -1,8 +1,18 @@
 package com.fairclaim.engine
 
 // Flow E: the restaurant answers a hold with a counter photo (checked like a
-// dispatch photo). Clear → settle with the policy share; anything else → human
+// dispatch photo: sealed, right code, no visible damage). Clear → settle with the policy share; anything else → human
 // review. The customer's refund never changes here. Mirrors engine/src/counterEvidence.ts.
+
+/**
+ * False when the restaurant's own dispatch photo already proves everything a
+ * counter photo could: the seal for missing/wrong items, a clean high-confidence
+ * parcel for damage. Re-sending that proof must not shift the cost.
+ */
+fun counterEvidenceCanHelp(input: EngineInput): Boolean {
+    val dispatch = classifyEvidence(input).dispatch ?: return true
+    return input.claim.issueType == IssueType.DAMAGED && dispatch.confidence != Confidence.HIGH
+}
 
 fun resolveCounterEvidence(input: EngineInput, decision: EngineDecision, counter: DispatchCheck): Resolution {
     if (decision.verdict != Verdict.HOLD) throw EngineException("not_hold")
@@ -11,25 +21,10 @@ fun resolveCounterEvidence(input: EngineInput, decision: EngineDecision, counter
     val refund = decision.refundAmount
     fun escalate(reason: String) = Resolution(Outcome.REVIEW, refund, Amounts.ZERO, listOf(reason), input.policy.policyVersion)
 
-    // Packed, sealed at dispatch and sealed at handoff, yet missing: another photo can't explain that.
-    if (decision.liabilityCase == "hold_investigate_contradiction") return escalate("counter_evidence_cannot_resolve_contradiction")
+    if (!counterEvidenceCanHelp(input)) return escalate("counter_evidence_repeats_dispatch")
 
-    // A late photo must not override the restaurant's own dispatch photo showing the item absent.
-    val dispatch = classifyEvidence(input).dispatch
-    if (dispatch != null && claim.issueType != IssueType.DAMAGED &&
-        ItemStatus.ABSENT in itemStatuses(dispatch, order, claim.selectedItemIds)
-    ) {
-        return escalate("counter_evidence_conflicts_dispatch")
-    }
-
-    val contentOk = if (claim.issueType == IssueType.DAMAGED) {
-        !counter.spillOrDamageVisible
-    } else {
-        claim.selectedItemIds.all { id ->
-            val item = order.items.firstOrNull { it.id == id }
-            item != null && counter.visibleItems.any { namesMatch(it, item.name) }
-        }
-    }
+    // Damage needs a clean-looking parcel; missing/wrong items can only be answered by the seal.
+    val contentOk = claim.issueType != IssueType.DAMAGED || !counter.spillOrDamageVisible
     val clear = counter.sealIntact && order.sealCode != null && counter.sealCodeRead == order.sealCode &&
         counter.confidence == Confidence.HIGH && contentOk
     if (!clear) return escalate("counter_evidence_unclear")

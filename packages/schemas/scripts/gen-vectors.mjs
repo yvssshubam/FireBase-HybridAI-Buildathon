@@ -23,10 +23,9 @@ const ORDER = {
   total: 640,
   sealCode: "4721",
 };
-const ALL_VISIBLE = ["Chicken Biryani", "Gulab Jamun", "Raita"];
 const D = (o = {}) => ({
   check: merge(
-    { seal_intact: true, seal_code_read: "4721", visible_item_count: 3, visible_items: ALL_VISIBLE, spill_or_damage_visible: false, confidence: "high" },
+    { seal_intact: true, seal_code_read: "4721", spill_or_damage_visible: false, confidence: "high" },
     o,
   ),
 });
@@ -150,53 +149,39 @@ add(
   auto(380, "transit", "handling_damage", [DV, HI]),
 );
 const LASSI = { id: "order-2", items: [{ id: "lassi", name: "Mango Lassi", price: 75 }], total: 75, sealCode: "4721" };
-const LASSI_D = D({ visible_item_count: 1, visible_items: ["Mango Lassi"] });
+const LASSI_D = D();
 const lassi = (o) => input({ order: LASSI, dispatch: LASSI_D, c: { selectedItemIds: ["lassi"] }, ...o });
 add("refund: 22.5 rounds half up to 23", "8.3", lassi({ dmg: { matched_item: "Mango Lassi", severity: "minor" } }), auto(23, "transit", "handling_damage", [DV, HI]));
 add("refund: 21.3 rounds down to 21", "8.3", input({ order: { ...LASSI, items: [{ id: "lassi", name: "Mango Lassi", price: 71 }], total: 71 }, dispatch: LASSI_D, c: { selectedItemIds: ["lassi"] }, dmg: { matched_item: "Mango Lassi", severity: "minor" } }), auto(21, "transit", "handling_damage", [DV, HI]));
 // 75 × 0.6 = 45; hold 380‰: 45×380 = 17100 → 17; transit 28
-add("refund: odd hold split rounds restaurant share half up", "8.4", lassi({ dispatch: D({ visible_item_count: 1, visible_items: ["Mango Lassi"], confidence: "medium" }), dmg: { matched_item: "Mango Lassi" } }), hold(45, [17, 28, 0], [380, 620], "hold_damage_dispatch_uncertain", [DV, HI]));
+add("refund: odd hold split rounds restaurant share half up", "8.4", lassi({ dispatch: D({ confidence: "medium" }), dmg: { matched_item: "Mango Lassi" } }), hold(45, [17, 28, 0], [380, 620], "hold_damage_dispatch_uncertain", [DV, HI]));
 add("risk: refund above auto-approve cap → review (default 5)", "default.5", input({ dmg: { severity: "total" } }), review(180, "handling_damage", [DV, HI, "over_auto_approve_cap"]), { autoApproveCap: 100 });
 add("risk: refund equal to cap is still instant", "8.4", input({ dmg: { severity: "total" } }), auto(180, "transit", "handling_damage", [DV, HI]), { autoApproveCap: 180 });
 add("risk: 3 claims in 30 days → review (default 5)", "default.5", input({ c: { customerClaims30d: 3 } }), review(108, "handling_damage", [DV, HI, "claim_history_limit"]));
 add("risk: 2 claims in 30 days still instant", "8.4", input({ c: { customerClaims30d: 2 } }), auto(108, "transit", "handling_damage", [DV, HI]));
 add("risk: hold above cap → review", "default.5", input({ dispatch: D({ confidence: "medium" }) }), review(108, "hold_damage_dispatch_uncertain", [DV, HI, "over_auto_approve_cap"]), { autoApproveCap: 100 });
 
-// Missing items (§8.2 table 1). Gulab Jamun missing → 1.0 × 180.
-const ABSENT = D({ visible_item_count: 2, visible_items: ["Chicken Biryani", "Raita"] });
+// Missing items (§8.2 table 1, seal-only matrix agreed Nov 22: missing.1 broken → transit,
+// missing.2 intact → restaurant, missing.3 no handoff → neutral hold, missing.4 no dispatch → hold by handoff). A sealed bag hides the food, so the
+// dispatch photo proves only "sealed with this order's code"; the handoff seal
+// then says whether anyone opened it. Gulab Jamun missing → 1.0 × 180.
 const m = (o) => input({ type: "missing", ...o });
-add("missing: packed + broken at handoff → transit", "8.2.missing.1", m({ handoff: H("broken") }), auto(180, "transit", "transit_tamper", [DV, HB]));
-add("missing: packed + intact at handoff → investigate hold", "8.2.missing.2", m(), hold(180, [90, 90, 0], [500, 500], "hold_investigate_contradiction", [DV, HI]));
-add("missing: not packed + intact at handoff → restaurant", "8.2.missing.3", m({ dispatch: ABSENT }), auto(180, "restaurant", "restaurant_not_packed", [DV, HI]));
-// high toward transit → 300‰: 180×300 = 54000 → 54; 126
-add("missing: packed, no handoff → hold weighted to transit", "8.2.missing.4", m({ handoff: null }), hold(180, [54, 126, 0], [300, 700], "hold_no_handoff", [DV, HM]));
-add("missing: not packed, no handoff → hold weighted to restaurant", "8.2.missing.4", m({ dispatch: ABSENT, handoff: null }), hold(180, [126, 54, 0], [700, 300], "hold_no_handoff", [DV, HM]));
-// medium toward transit → 380‰: 180×380 = 68400 → 68; 112
-add("missing: packed (medium), no handoff → weaker shift", "8.2.missing.4", m({ dispatch: D({ confidence: "medium" }), handoff: null }), hold(180, [68, 112, 0], [380, 620], "hold_no_handoff", [DV, HM]));
-add("missing: handoff seal not visible counts as no handoff", "default.2", m({ handoff: H("not_visible") }), hold(180, [54, 126, 0], [300, 700], "hold_no_handoff", [DV, HU]));
-add("missing: no dispatch, intact handoff → hold weighted to restaurant", "8.2.missing.5", m({ dispatch: null }), hold(180, [126, 54, 0], [700, 300], "hold_no_dispatch", [DM, HI]));
+add("missing: sealed at dispatch + broken at handoff → transit", "8.2.missing.1", m({ handoff: H("broken") }), auto(180, "transit", "transit_tamper", [DV, HB]));
+add("missing: sealed at dispatch + intact at handoff → restaurant (never packed)", "8.2.missing.2", m(), auto(180, "restaurant", "restaurant_not_packed", [DV, HI]));
+add("missing: sealed at dispatch, no handoff → neutral hold", "8.2.missing.3", m({ handoff: null }), hold(180, [90, 90, 0], [500, 500], "hold_no_handoff", [DV, HM]));
+add("missing: dispatch confidence does not shift a no-handoff hold", "8.2.missing.3", m({ dispatch: D({ confidence: "medium" }), handoff: null }), hold(180, [90, 90, 0], [500, 500], "hold_no_handoff", [DV, HM]));
+add("missing: handoff seal not visible counts as no handoff", "default.2", m({ handoff: H("not_visible") }), hold(180, [90, 90, 0], [500, 500], "hold_no_handoff", [DV, HU]));
+add("missing: no dispatch, intact handoff → hold weighted to restaurant", "8.2.missing.4", m({ dispatch: null }), hold(180, [126, 54, 0], [700, 300], "hold_no_dispatch", [DM, HI]));
 // medium handoff toward restaurant → 620‰: 180×620 = 111600 → 112; 68
-add("missing: no dispatch, intact handoff (medium) → weaker shift", "8.2.missing.5", m({ dispatch: null, handoff: H("intact", { confidence: "medium" }) }), hold(180, [112, 68, 0], [620, 380], "hold_no_dispatch", [DM, HI]));
-add("missing: no dispatch, broken handoff → hold weighted to transit", "8.2.missing.5", m({ dispatch: null, handoff: H("broken") }), hold(180, [54, 126, 0], [300, 700], "hold_no_dispatch", [DM, HB]));
-add("missing: no dispatch, no handoff → neutral hold", "8.2.missing.5", m({ dispatch: null, handoff: null }), hold(180, [90, 90, 0], [500, 500], "hold_no_dispatch", [DM, HM]));
-add("missing: not packed + broken at handoff → hold weighted to restaurant (default 1)", "default.1", m({ dispatch: ABSENT, handoff: H("broken") }), hold(180, [126, 54, 0], [700, 300], "hold_absent_and_tampered", [DV, HB]));
+add("missing: no dispatch, intact handoff (medium) → weaker shift", "8.2.missing.4", m({ dispatch: null, handoff: H("intact", { confidence: "medium" }) }), hold(180, [112, 68, 0], [620, 380], "hold_no_dispatch", [DM, HI]));
+add("missing: no dispatch, broken handoff → hold weighted to transit", "8.2.missing.4", m({ dispatch: null, handoff: H("broken") }), hold(180, [54, 126, 0], [300, 700], "hold_no_dispatch", [DM, HB]));
+add("missing: no dispatch, no handoff → neutral hold", "8.2.missing.4", m({ dispatch: null, handoff: null }), hold(180, [90, 90, 0], [500, 500], "hold_no_dispatch", [DM, HM]));
+add("missing: dispatch with the wrong code counts as no dispatch (default 4)", "default.4", m({ dispatch: D({ seal_code_read: "4712" }) }), hold(180, [126, 54, 0], [700, 300], "hold_no_dispatch", [DI, HI]));
 add(
-  "missing: dispatch names unclear, count full → neutral hold",
-  "default.1",
-  m({ dispatch: D({ visible_items: ["rice box", "dessert", "curd"] }) }),
-  hold(180, [90, 90, 0], [500, 500], "hold_item_status_unclear", [DV, HI]),
-);
-add(
-  "missing: two items not packed → restaurant, summed",
-  "8.2.missing.3",
-  m({ dispatch: D({ visible_item_count: 1, visible_items: ["Chicken Biryani"] }), c: { selectedItemIds: ["gulab-jamun", "raita"] } }),
+  "missing: two items, sealed throughout → restaurant, summed",
+  "8.2.missing.2",
+  m({ c: { selectedItemIds: ["gulab-jamun", "raita"] } }),
   auto(260, "restaurant", "restaurant_not_packed", [DV, HI]),
-);
-add(
-  "missing: one packed and one not → neutral hold",
-  "default.1",
-  m({ dispatch: D({ visible_item_count: 2, visible_items: ["Chicken Biryani", "Gulab Jamun"] }), c: { selectedItemIds: ["gulab-jamun", "raita"] } }),
-  hold(260, [130, 130, 0], [500, 500], "hold_item_status_unclear", [DV, HI]),
 );
 add(
   "missing: whole order capped at discounted total",
@@ -204,24 +189,20 @@ add(
   m({ order: { ...ORDER, total: 500 }, handoff: H("broken"), c: { selectedItemIds: ["biryani", "gulab-jamun", "raita"] } }),
   auto(500, "transit", "transit_tamper", [DV, HB, "refund_capped_at_order_total"]),
 );
-add("missing: dispatch name match by whole words", "8.2.missing.1", m({ dispatch: D({ visible_items: ["chicken biryani box", "gulab jamun", "raita cup"] }), handoff: H("broken") }), auto(180, "transit", "transit_tamper", [DV, HB]));
-add("missing: name match wins over a short count", "8.2.missing.2", m({ dispatch: D({ visible_item_count: 1, visible_items: ["Gulab Jamun"] }) }), hold(180, [90, 90, 0], [500, 500], "hold_investigate_contradiction", [DV, HI]));
 add("missing: claim-photo seal state is ignored for liability", "8.2.key-rule", m({ handoff: H("broken"), cc: { seal_state: "intact" } }), auto(180, "transit", "transit_tamper", [DV, HB]));
-add("missing: plan rows ignore dispatch confidence", "8.2.missing.3", m({ dispatch: D({ visible_item_count: 2, visible_items: ["Chicken Biryani", "Raita"], confidence: "low" }) }), auto(180, "restaurant", "restaurant_not_packed", [DV, HI]));
+add("missing: dispatch confidence does not matter once both seals are known", "8.2.missing.2", m({ dispatch: D({ confidence: "low" }) }), auto(180, "restaurant", "restaurant_not_packed", [DV, HI]));
+add("missing: damage flag at dispatch is irrelevant to a missing item", "8.2.missing.1", m({ dispatch: D({ spill_or_damage_visible: true }), handoff: H("broken") }), auto(180, "transit", "transit_tamper", [DV, HB]));
 
-// Wrong item (§8.2 "Wrong item" + defaults). Raita replaced → 1.0 × 80.
-const NO_RAITA = D({ visible_item_count: 2, visible_items: ["Chicken Biryani", "Gulab Jamun"] });
+// Wrong item (§8.2 "Wrong item", seal-only). Raita replaced → 1.0 × 80.
 const w = (o) => input({ type: "wrong_item", ...o });
-add("wrong: wrong at dispatch → restaurant", "8.2.wrong.1", w({ dispatch: NO_RAITA }), auto(80, "restaurant", "restaurant_not_packed", [DV, HI]));
-add("wrong: correct at dispatch + intact handoff → investigate hold", "8.2.wrong.2", w(), hold(80, [40, 40, 0], [500, 500], "hold_investigate_contradiction", [DV, HI]));
-add("wrong: correct at dispatch + broken handoff → transit (default 3)", "default.3", w({ handoff: H("broken") }), auto(80, "transit", "transit_tamper", [DV, HB]));
-// 80×300 = 24000 → 24; 56
-add("wrong: correct at dispatch, no handoff → hold weighted to transit", "default.1", w({ handoff: null }), hold(80, [24, 56, 0], [300, 700], "hold_no_handoff", [DV, HM]));
+add("wrong: sealed at dispatch + intact handoff → restaurant", "8.2.wrong.1", w(), auto(80, "restaurant", "restaurant_not_packed", [DV, HI]));
+add("wrong: sealed at dispatch + broken handoff → transit", "8.2.wrong.2", w({ handoff: H("broken") }), auto(80, "transit", "transit_tamper", [DV, HB]));
+add("wrong: sealed at dispatch, no handoff → neutral hold", "8.2.wrong.3", w({ handoff: null }), hold(80, [40, 40, 0], [500, 500], "hold_no_handoff", [DV, HM]));
 // 80×700 = 56000 → 56; 24
-add("wrong: no dispatch, intact handoff → hold weighted to restaurant", "default.1", w({ dispatch: null }), hold(80, [56, 24, 0], [700, 300], "hold_no_dispatch", [DM, HI]));
-add("wrong: crop looks like the ordered item → review", "claim", w({ dmg: { matched_item: "Raita" } }), review(80, "hold_investigate_contradiction", [DV, HI, "wrong_item_disputed"]));
-add("wrong: no damage check → review", "8.1", w({ dmg: null }), review(80, "hold_investigate_contradiction", [DV, HI, "gate_damage_check_missing"]));
-add("wrong: crop low confidence → review", "8.1", w({ dmg: { confidence: "low" } }), review(80, "hold_investigate_contradiction", [DV, HI, "gate_damage_low_confidence"]));
+add("wrong: no dispatch, intact handoff → hold weighted to restaurant", "8.2.wrong.4", w({ dispatch: null }), hold(80, [56, 24, 0], [700, 300], "hold_no_dispatch", [DM, HI]));
+add("wrong: crop looks like the ordered item → review", "claim", w({ dmg: { matched_item: "Raita" } }), review(80, "restaurant_not_packed", [DV, HI, "wrong_item_disputed"]));
+add("wrong: no damage check → review", "8.1", w({ dmg: null }), review(80, "restaurant_not_packed", [DV, HI, "gate_damage_check_missing"]));
+add("wrong: crop low confidence → review", "8.1", w({ dmg: { confidence: "low" } }), review(80, "restaurant_not_packed", [DV, HI, "gate_damage_low_confidence"]));
 add("wrong: two items selected → review", "claim", w({ c: { selectedItemIds: ["raita", "biryani"] } }), review(0, "undetermined", [DV, HI, "claim_items_invalid"]));
 
 // Cloud review (§8.4 last bullet + hard rule "degrade to review").
@@ -245,17 +226,19 @@ addC("counter: wrong seal code → human review", input({ dispatch: null }), CE(
 addC("counter: seal not intact → human review", input({ dispatch: null }), CE({ seal_intact: false }), escalated(108, ["counter_evidence_unclear"]));
 addC("counter: damage visible in counter photo → human review", input({ dispatch: null }), CE({ spill_or_damage_visible: true }), escalated(108, ["counter_evidence_unclear"]));
 addC("counter: settles an uncertain-dispatch damage hold", input({ dispatch: D({ confidence: "medium" }) }), CE(), settled(108, [0, 108, 0], ["counter_evidence_clear"]));
-addC("counter: cannot resolve the packed-and-sealed contradiction", m(), CE(), escalated(180, ["counter_evidence_cannot_resolve_contradiction"]));
-addC("counter: conflicts with own dispatch photo (item absent)", m({ dispatch: ABSENT, handoff: null }), CE(), escalated(180, ["counter_evidence_conflicts_dispatch"]));
-addC("counter: clear photo settles a no-dispatch missing hold", m({ dispatch: null }), CE(), settled(180, [0, 180, 0], ["counter_evidence_clear"]));
-addC("counter: claimed item not visible in counter photo", m({ dispatch: null }), CE({ visible_item_count: 2, visible_items: ["Chicken Biryani", "Raita"] }), escalated(180, ["counter_evidence_unclear"]));
+addC("counter: clear photo settles a no-dispatch missing hold (seal only, no items needed)", m({ dispatch: null }), CE(), settled(180, [0, 180, 0], ["counter_evidence_clear"]));
+addC("counter: wrong code on a missing hold → human review", m({ dispatch: null }), CE({ seal_code_read: "4712" }), escalated(180, ["counter_evidence_unclear"]));
+addC("counter: damage in the counter photo doesn't matter for a missing item", m({ dispatch: null }), CE({ spill_or_damage_visible: true }), settled(180, [0, 180, 0], ["counter_evidence_clear"]));
+addC("counter: missing hold with the seal already proven at dispatch → human review", m({ handoff: null }), CE(), escalated(180, ["counter_evidence_repeats_dispatch"]));
+addC("counter: wrong-item hold with the seal already proven at dispatch → human review", w({ handoff: null }), CE(), escalated(80, ["counter_evidence_repeats_dispatch"]));
+addC("counter: damage hold after a clean high-confidence dispatch → human review", input({ handoff: null }), CE(), escalated(108, ["counter_evidence_repeats_dispatch"]));
 // 108×250 = 27000 → 27; transit 81
 addC("counter: policy can keep part of the restaurant share", input({ dispatch: null }), CE(), settled(108, [27, 81, 0], ["counter_evidence_clear"]), { counterEvidence: { restaurantPermilleAfterClear: 250 } });
 addC("counter: not allowed on an auto refund", input(), CE(), { error: "not_hold" });
 addC("counter: not allowed on a review decision", input({ cc: { fingers_visible: 1 } }), CE(), { error: "not_hold" });
 
 // ---------- model-output vectors ----------
-const okD = { seal_intact: true, seal_code_read: "4721", visible_item_count: 2, visible_items: ["biryani box", "dessert cup"], spill_or_damage_visible: false, confidence: "high" };
+const okD = { seal_intact: true, seal_code_read: "4721", spill_or_damage_visible: false, confidence: "high" };
 const js = (o) => JSON.stringify(o);
 const longItem = "x".repeat(70);
 const longText = "a".repeat(700);
@@ -284,12 +267,7 @@ addM("dispatch: five-digit code", "dispatch", js({ ...okD, seal_code_read: "4721
 addM("dispatch: enum case and spaces", "dispatch", js({ ...okD, confidence: " High " }), ok(okD));
 addM("dispatch: extra key dropped", "dispatch", js({ ...okD, notes: "looks fine" }), ok(okD));
 addM("dispatch: missing key", "dispatch", js({ ...okD, confidence: undefined }), bad("schema"));
-addM("dispatch: fractional count", "dispatch", js({ ...okD, visible_item_count: 2.5 }), bad("schema"));
-addM("dispatch: count written as 2.0", "dispatch", js(okD).replace('"visible_item_count":2', '"visible_item_count":2.0'), ok(okD));
-addM("dispatch: count too large", "dispatch", js({ ...okD, visible_item_count: 51 }), bad("schema"));
-addM("dispatch: items trimmed, truncated, blanks dropped", "dispatch", js({ ...okD, visible_items: ["  biryani box ", "   ", longItem] }), ok({ ...okD, visible_items: ["biryani box", "x".repeat(60)] }));
-addM("dispatch: more than 20 items kept to 20", "dispatch", js({ ...okD, visible_items: Array.from({ length: 25 }, (_, i) => `item ${i}`) }), ok({ ...okD, visible_items: Array.from({ length: 20 }, (_, i) => `item ${i}`) }));
-addM("dispatch: non-string item", "dispatch", js({ ...okD, visible_items: ["biryani", 3] }), bad("schema"));
+addM("dispatch: item fields from older prompts are dropped", "dispatch", js({ ...okD, visible_item_count: 2, visible_items: ["biryani"] }), ok(okD));
 addM("dispatch: boolean as string", "dispatch", js({ ...okD, seal_intact: "true" }), bad("schema"));
 addM("dispatch: null confidence", "dispatch", js({ ...okD, confidence: null }), bad("schema"));
 addM("dispatch: no JSON at all", "dispatch", "I cannot see a seal in this photo.", bad("no_json"));

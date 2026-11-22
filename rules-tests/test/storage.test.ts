@@ -1,6 +1,6 @@
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { doc, setDoc } from "firebase/firestore";
-import { deleteObject, getBytes, listAll, ref, uploadBytes } from "firebase/storage";
+import { deleteObject, getBytes, getMetadata, listAll, ref, uploadBytes } from "firebase/storage";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 import { ago, clearStorageDeep, CUST, fs, jpeg, MALLORY, REST, REST2, seedBase, setup, st } from "./helpers.ts";
 
@@ -78,6 +78,15 @@ describe("dispatch thumbnails and counter photos", () => {
     await assertSucceeds(uploadBytes(ref(storageOf(REST), "counter/c1/photo.jpg"), jpeg(), JPEG));
     await assertSucceeds(getBytes(ref(storageOf(CUST), "counter/c1/photo.jpg")));
     await assertFails(uploadBytes(ref(storageOf(CUST), "counter/c1/photo.jpg"), jpeg(), JPEG));
+  });
+  it("web app: uploads carry a sha256 custom metadata field; the uploader can read it back to retry safely", async () => {
+    const meta = { contentType: "image/jpeg", customMetadata: { sha256: "a".repeat(64) } };
+    await assertSucceeds(uploadBytes(ref(storageOf(REST), "dispatch/o1/thumb.jpg"), jpeg(), meta));
+    await assertSucceeds(uploadBytes(ref(storageOf(REST), "counter/c1/photo.jpg"), jpeg(), meta));
+    await assertSucceeds(getMetadata(ref(storageOf(REST), "dispatch/o1/thumb.jpg")));
+    await assertSucceeds(getMetadata(ref(storageOf(REST), "counter/c1/photo.jpg")));
+    // A second upload is still refused (create-once).
+    await assertFails(uploadBytes(ref(storageOf(REST), "counter/c1/photo.jpg"), jpeg(2048), meta));
   });
   it("everything else is closed", async () => {
     await assertFails(uploadBytes(ref(storageOf(CUST), "anything/else.jpg"), jpeg(), JPEG));

@@ -2,17 +2,12 @@
   {
     "name": "dispatch: exact JSON",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -21,17 +16,12 @@
   {
     "name": "dispatch: fenced JSON with prose",
     "kind": "dispatch",
-    "text": "Sure!\n```json\n{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}\n```\n",
+    "text": "Sure!\n```json\n{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}\n```\n",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -40,17 +30,12 @@
   {
     "name": "dispatch: spaced code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47 21\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47 21\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -59,17 +44,12 @@
   {
     "name": "dispatch: dashed code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47-21\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47-21\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -78,17 +58,12 @@
   {
     "name": "dispatch: code with words",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721 (partly hidden)\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721 (partly hidden)\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -97,17 +72,12 @@
   {
     "name": "dispatch: unreadable code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"unreadable\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"unreadable\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -116,17 +86,12 @@
   {
     "name": "dispatch: numeric code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":4721,\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":4721,\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -135,17 +100,12 @@
   {
     "name": "dispatch: three-digit code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"472\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"472\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -154,17 +114,12 @@
   {
     "name": "dispatch: five-digit code",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47215\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"47215\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -173,17 +128,12 @@
   {
     "name": "dispatch: enum case and spaces",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\" High \"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\" High \"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -192,17 +142,12 @@
   {
     "name": "dispatch: extra key dropped",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\",\"notes\":\"looks fine\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\",\"notes\":\"looks fine\"}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
@@ -211,118 +156,30 @@
   {
     "name": "dispatch: missing key",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false}",
     "expected": {
       "ok": false,
       "error": "schema"
     }
   },
   {
-    "name": "dispatch: fractional count",
+    "name": "dispatch: item fields from older prompts are dropped",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2.5,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
-    "expected": {
-      "ok": false,
-      "error": "schema"
-    }
-  },
-  {
-    "name": "dispatch: count written as 2.0",
-    "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2.0,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\",\"visible_item_count\":2,\"visible_items\":[\"biryani\"]}",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }
-    }
-  },
-  {
-    "name": "dispatch: count too large",
-    "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":51,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
-    "expected": {
-      "ok": false,
-      "error": "schema"
-    }
-  },
-  {
-    "name": "dispatch: items trimmed, truncated, blanks dropped",
-    "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"  biryani box \",\"   \",\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
-    "expected": {
-      "ok": true,
-      "value": {
-        "seal_intact": true,
-        "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        ],
-        "spill_or_damage_visible": false,
-        "confidence": "high"
-      }
-    }
-  },
-  {
-    "name": "dispatch: more than 20 items kept to 20",
-    "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"item 0\",\"item 1\",\"item 2\",\"item 3\",\"item 4\",\"item 5\",\"item 6\",\"item 7\",\"item 8\",\"item 9\",\"item 10\",\"item 11\",\"item 12\",\"item 13\",\"item 14\",\"item 15\",\"item 16\",\"item 17\",\"item 18\",\"item 19\",\"item 20\",\"item 21\",\"item 22\",\"item 23\",\"item 24\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
-    "expected": {
-      "ok": true,
-      "value": {
-        "seal_intact": true,
-        "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "item 0",
-          "item 1",
-          "item 2",
-          "item 3",
-          "item 4",
-          "item 5",
-          "item 6",
-          "item 7",
-          "item 8",
-          "item 9",
-          "item 10",
-          "item 11",
-          "item 12",
-          "item 13",
-          "item 14",
-          "item 15",
-          "item 16",
-          "item 17",
-          "item 18",
-          "item 19"
-        ],
-        "spill_or_damage_visible": false,
-        "confidence": "high"
-      }
-    }
-  },
-  {
-    "name": "dispatch: non-string item",
-    "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani\",3],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
-    "expected": {
-      "ok": false,
-      "error": "schema"
     }
   },
   {
     "name": "dispatch: boolean as string",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":\"true\",\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
+    "text": "{\"seal_intact\":\"true\",\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}",
     "expected": {
       "ok": false,
       "error": "schema"
@@ -331,7 +188,7 @@
   {
     "name": "dispatch: null confidence",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":null}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":null}",
     "expected": {
       "ok": false,
       "error": "schema"
@@ -358,7 +215,7 @@
   {
     "name": "dispatch: trailing comma",
     "kind": "dispatch",
-    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\",}",
+    "text": "{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\",}",
     "expected": {
       "ok": false,
       "error": "bad_json"
@@ -367,17 +224,12 @@
   {
     "name": "dispatch: array wrapper is unwrapped to its object",
     "kind": "dispatch",
-    "text": "[{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"visible_item_count\":2,\"visible_items\":[\"biryani box\",\"dessert cup\"],\"spill_or_damage_visible\":false,\"confidence\":\"high\"}]",
+    "text": "[{\"seal_intact\":true,\"seal_code_read\":\"4721\",\"spill_or_damage_visible\":false,\"confidence\":\"high\"}]",
     "expected": {
       "ok": true,
       "value": {
         "seal_intact": true,
         "seal_code_read": "4721",
-        "visible_item_count": 2,
-        "visible_items": [
-          "biryani box",
-          "dessert cup"
-        ],
         "spill_or_damage_visible": false,
         "confidence": "high"
       }

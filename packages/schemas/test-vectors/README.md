@@ -9,7 +9,7 @@ Expected values are written by hand in the generator, never produced by running 
 | `engine.vectors.json` | `decide(input)` | Verification gate (§8.1), liability matrix (§8.2), proportionate refund + caps (§8.3), auto/hold/review (§8.4), cloud-review downgrade |
 | `counter-evidence.vectors.json` | `decide` then `resolveCounterEvidence` | Flow E: clear counter-evidence settles the hold, unclear goes to human review |
 | `model-output.vectors.json` | `parseModelOutput(kind, text)` | JSON extraction, normalization, schema validation of every model output |
-| `item-match.vectors.json` | `namesMatch(a, b)` | Item-name matching used for dispatch/counter photos and the damage crop |
+| `item-match.vectors.json` | `namesMatch(a, b)` | Item-name matching used for the damage crop |
 
 Each engine vector uses `policy/policy.v1.json`, with an optional `policyPatch` whose top-level keys replace the policy's.
 
@@ -22,12 +22,10 @@ Each engine vector uses `policy/policy.v1.json`, with an optional `policyPatch` 
 5. Verified but refund > `autoApproveCap`, or `customerClaims30d ≥ claimHistoryLimit30d` → **review**.
 6. **Hold split is confidence-weighted**: start at `baseRestaurantPermille` (500), move `maxShiftPermille × weight[confidence] / 1000` toward the party the evidence points at:
    - damage, dispatch clean but medium/low, or clean high with no handoff → toward transit, by dispatch confidence
-   - missing/wrong, no handoff → toward transit if the item was visible at dispatch, toward restaurant if absent, by dispatch confidence
    - missing/wrong, no dispatch → toward restaurant if handoff seal intact, toward transit if broken, by handoff confidence
-   - missing/wrong, item absent at dispatch but seal broken at handoff → toward restaurant, by dispatch confidence
-   - contradiction, unclear item status, damage with no dispatch → neutral
+   - missing/wrong sealed at dispatch but no handoff, damage with no dispatch → neutral
    With the defaults this gives 30/70 (high), 38/62 (medium), 44/56 (low).
-7. **Counter-evidence** (Flow E): the restaurant's photo is checked like a dispatch photo. Clear (seal intact, right code, high confidence, claimed items visible / no damage) → hold settles with `restaurantPermilleAfterClear` (default 0). Not clear → **human review**. It can never resolve the "packed and sealed but missing" contradiction, or override the restaurant's own dispatch photo showing the item absent. The customer's refund never changes.
+7. **Counter-evidence** (Flow E): the restaurant's photo is checked like a dispatch photo. Clear (seal intact, right code, high confidence, and no visible damage for a damage claim) → hold settles with `restaurantPermilleAfterClear` (default 0). Not clear → **human review**. When the restaurant's own dispatch photo already proves what a counter photo could (the seal, for missing/wrong items; a clean high-confidence parcel, for damage), the counter photo goes to **human review** (`counter_evidence_repeats_dispatch`): re-sending the same proof must not shift the cost. The customer's refund never changes.
 8. Money is whole rupees. Per-item refund = ⌊(price × permille + 500) / 1000⌋ (half up), summed, capped at the order total. Restaurant share = ⌊(refund × permille + 500) / 1000⌋; transit gets the rest, so shares always add up.
 9. Items match when their normalized names (lowercase, non-alphanumerics → spaces) are equal or one contains the other as whole words.
-10. For missing/wrong items, an item is *visible* at dispatch if a listed name matches; *absent* if none matches and the visible count is short of the order's line count; otherwise *unclear*. Several items with mixed status → unclear.
+10. **Seal-only dispatch (Nov 22).** A sealed bag hides the food, so the dispatch photo is never asked which items it shows (on-device tests: Gemini Nano "saw" whatever items the prompt said to expect, even in an empty photo). Missing/wrong items are decided by the seals alone: sealed with the right code at dispatch and **intact** at handoff → restaurant (never packed); **broken** at handoff → transit; no usable handoff → neutral hold; no usable dispatch → hold leaning by the handoff seal. The §8.2 rows are renumbered to this matrix (missing.1–4, wrong.1–4).

@@ -37,9 +37,8 @@ service cloud.firestore {
     // Normalized model outputs (packages/schemas/schemas/*.schema.json).
     function validDispatchCheck(c) {
       return c is map
-        && exactKeys(c, ['seal_intact', 'seal_code_read', 'visible_item_count', 'visible_items', 'spill_or_damage_visible', 'confidence'])
-        && c.seal_intact is bool && sealRead(c.seal_code_read) && isInt(c.visible_item_count, 0, 50)
-        && c.visible_items is list && c.visible_items.size() <= 20
+        && exactKeys(c, ['seal_intact', 'seal_code_read', 'spill_or_damage_visible', 'confidence'])
+        && c.seal_intact is bool && sealRead(c.seal_code_read)
         && c.spill_or_damage_visible is bool && confidence(c.confidence);
     }
     function validHandoffCheck(c) {

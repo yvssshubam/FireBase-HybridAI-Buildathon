@@ -18,11 +18,10 @@ enum class IssueType(override val wire: String) : Wire { DAMAGED("damaged"), MIS
 enum class Party(override val wire: String) : Wire { RESTAURANT("restaurant"), TRANSIT("transit"), PLATFORM("platform") }
 enum class Verdict(override val wire: String) : Wire { AUTO_REFUND("auto_refund"), HOLD("hold"), REVIEW("review") }
 
+/** A sealed bag hides the food, so the dispatch photo answers only: sealed? which code? outside damage? */
 data class DispatchCheck(
     val sealIntact: Boolean,
     val sealCodeRead: String,
-    val visibleItemCount: Int,
-    val visibleItems: List<String>,
     val spillOrDamageVisible: Boolean,
     val confidence: Confidence,
 )

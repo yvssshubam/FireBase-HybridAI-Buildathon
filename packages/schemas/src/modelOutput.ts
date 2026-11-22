@@ -16,14 +16,12 @@ export type ParseResult<K extends ModelOutputKind> =
   | { ok: true; value: ModelOutputs[K] }
   | { ok: false; error: ParseError; detail?: string };
 
-type Field = "code" | "enum" | "text60" | "text600" | "items" | "flags" | "raw";
+type Field = "code" | "enum" | "text60" | "text600" | "flags" | "raw";
 
 const FIELDS: Record<ModelOutputKind, Record<string, Field>> = {
   dispatch: {
     seal_intact: "raw",
     seal_code_read: "code",
-    visible_item_count: "raw",
-    visible_items: "items",
     spill_or_damage_visible: "raw",
     confidence: "enum",
   },
@@ -85,13 +83,6 @@ function normalizeField(kind: Field, v: unknown): unknown {
       return typeof v === "string" ? v.trim().slice(0, 60) : v;
     case "text600":
       return typeof v === "string" ? v.trim().slice(0, 600) : v;
-    case "items": {
-      if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) return v;
-      return (v as string[])
-        .map((x) => x.trim().slice(0, 60))
-        .filter((x) => x.length > 0)
-        .slice(0, 20);
-    }
     case "flags": {
       if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) return v;
       const out: string[] = [];

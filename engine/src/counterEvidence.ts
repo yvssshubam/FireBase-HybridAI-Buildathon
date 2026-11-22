@@ -1,15 +1,26 @@
 // Flow E: the restaurant answers a hold with a counter photo (checked like a
-// dispatch photo). Clear → settle with the policy share; anything else → human
-// review. The customer's refund never changes here.
+// dispatch photo: sealed, right code, no visible damage). Clear → settle with
+// the policy share; anything else → human review. The customer's refund never
+// changes here.
 import type { DispatchCheck, EngineDecision, EngineInput, Resolution } from "@fairclaim/schemas";
-import { classifyEvidence, itemStatuses } from "./evidence.ts";
-import { namesMatch } from "./match.ts";
+import { classifyEvidence } from "./evidence.ts";
 import { permilleOf } from "./money.ts";
 
 export class EngineError extends Error {
   constructor(readonly code: "not_hold") {
     super(code);
   }
+}
+
+/**
+ * False when the restaurant's own dispatch photo already proves everything a
+ * counter photo could: the seal for missing/wrong items, a clean high-confidence
+ * parcel for damage. Re-sending that proof must not shift the cost.
+ */
+export function counterEvidenceCanHelp(input: EngineInput): boolean {
+  const dispatch = classifyEvidence(input).dispatch;
+  if (dispatch === null) return true;
+  return input.claim.issueType === "damaged" && dispatch.confidence !== "high";
 }
 
 export function resolveCounterEvidence(input: EngineInput, decision: EngineDecision, counter: DispatchCheck): Resolution {
@@ -24,22 +35,10 @@ export function resolveCounterEvidence(input: EngineInput, decision: EngineDecis
     policyVersion: policy.policyVersion,
   });
 
-  // Packed, sealed at dispatch and sealed at handoff, yet missing: another photo can't explain that.
-  if (decision.liabilityCase === "hold_investigate_contradiction") return escalate("counter_evidence_cannot_resolve_contradiction");
+  if (!counterEvidenceCanHelp(input)) return escalate("counter_evidence_repeats_dispatch");
 
-  // A late photo must not override the restaurant's own dispatch photo showing the item absent.
-  const dispatch = classifyEvidence(input).dispatch;
-  if (dispatch && claim.issueType !== "damaged" && itemStatuses(dispatch, order, claim.selectedItemIds).includes("absent")) {
-    return escalate("counter_evidence_conflicts_dispatch");
-  }
-
-  const contentOk =
-    claim.issueType === "damaged"
-      ? !counter.spill_or_damage_visible
-      : claim.selectedItemIds.every((id) => {
-          const item = order.items.find((i) => i.id === id);
-          return item !== undefined && counter.visible_items.some((v) => namesMatch(v, item.name));
-        });
+  // Damage needs a clean-looking parcel; missing/wrong items can only be answered by the seal.
+  const contentOk = claim.issueType !== "damaged" || !counter.spill_or_damage_visible;
   const clear = counter.seal_intact && order.sealCode !== null && counter.seal_code_read === order.sealCode && counter.confidence === "high" && contentOk;
   if (!clear) return escalate("counter_evidence_unclear");
 

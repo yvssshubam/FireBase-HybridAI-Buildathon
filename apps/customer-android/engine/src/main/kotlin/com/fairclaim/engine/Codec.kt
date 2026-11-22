@@ -15,7 +15,6 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
-import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 
 // JSON ↔ engine types, using the same field names as the JSON Schemas.
@@ -34,8 +33,6 @@ private fun JsonObject.objOrNull(k: String) = this[k]?.takeUnless { it is JsonNu
 fun dispatchCheckFrom(o: JsonObject) = DispatchCheck(
     sealIntact = o.bool("seal_intact"),
     sealCodeRead = o.str("seal_code_read"),
-    visibleItemCount = o.int("visible_item_count"),
-    visibleItems = o.strings("visible_items"),
     spillOrDamageVisible = o.bool("spill_or_damage_visible"),
     confidence = wireOf(o.str("confidence")),
 )
@@ -64,8 +61,6 @@ fun reviewOutputFrom(o: JsonObject) = ReviewOutput(
 fun dispatchCheckJson(d: DispatchCheck): JsonObject = buildJsonObject {
     put("seal_intact", d.sealIntact)
     put("seal_code_read", d.sealCodeRead)
-    put("visible_item_count", d.visibleItemCount)
-    putJsonArray("visible_items") { d.visibleItems.forEach { add(JsonPrimitive(it)) } }
     put("spill_or_damage_visible", d.spillOrDamageVisible)
     put("confidence", d.confidence.wire)
 }

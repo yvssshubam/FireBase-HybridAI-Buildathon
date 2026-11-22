@@ -82,8 +82,6 @@ export const damageCheck = { matched_item: "Gulab Jamun", issue: "spilled", seve
 export const dispatchCheck = {
   seal_intact: true,
   seal_code_read: SEAL,
-  visible_item_count: 2,
-  visible_items: ["Chicken Biryani", "Gulab Jamun"],
   spill_or_damage_visible: false,
   confidence: "high",
 };

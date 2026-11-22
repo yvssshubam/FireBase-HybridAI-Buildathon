@@ -180,6 +180,11 @@ describe("dispatch evidence (Flow A)", () => {
     await assertFails(dispatchBatch(REST, evidence({ check: { ...dispatchCheck, confidence: "certain" } })));
     await assertFails(dispatchBatch(REST, evidence({ check: { ...dispatchCheck, extra: 1 } })));
   });
+  it("rejects item guesses: a sealed bag hides the food, so the check is seal-only", async () => {
+    await assertFails(dispatchBatch(REST, evidence({ check: { ...dispatchCheck, visible_item_count: 2, visible_items: ["Chicken Biryani"] } })));
+    const noDamageField = Object.fromEntries(Object.entries(dispatchCheck).filter(([k]) => k !== "spill_or_damage_visible"));
+    await assertFails(dispatchBatch(REST, evidence({ check: noDamageField })));
+  });
   it("other restaurants and customers cannot write it", async () => {
     await assertFails(dispatchBatch(REST2, evidence()));
     await assertFails(dispatchBatch(CUST, evidence()));
@@ -506,6 +511,64 @@ describe("replay audit (§22.2)", () => {
   it("customers and other restaurants cannot write audits", async () => {
     await assertFails(setDoc(doc(as(CUST), "audits/c1"), audit({ restaurantId: CUST })));
     await assertFails(setDoc(doc(as(REST2), "audits/c1"), audit({ restaurantId: REST2 })));
+  });
+});
+
+describe("restaurant web app reads (Phase 1 query patterns)", () => {
+  const audit = { claimId: "c1", restaurantId: REST, match: true, mismatchFields: [], cropHashMatch: null, policyVersion: "v1", auditedAt: serverTimestamp() };
+  const byRestaurant = (uid: string, coll: string, restaurantId = uid) => getDocs(query(collection(as(uid), coll), where("restaurantId", "==", restaurantId)));
+  beforeEach(async () => {
+    await seedHold(env, "c1");
+  });
+  it("restaurant lists its own decisions, holds, resolutions and audits", async () => {
+    await assertSucceeds(setDoc(doc(as(REST), "audits/c1"), audit));
+    for (const coll of ["decisions", "holds", "resolutions", "audits"]) {
+      await assertSucceeds(byRestaurant(REST, coll));
+    }
+  });
+  it("cannot list another restaurant's records, or list without the restaurantId filter", async () => {
+    for (const coll of ["decisions", "holds", "resolutions", "audits"]) {
+      await assertFails(byRestaurant(REST2, coll, REST));
+      await assertFails(getDocs(collection(as(REST), coll)));
+    }
+  });
+  it("restaurant reads the evidence behind its decision", async () => {
+    await assertSucceeds(getDoc(doc(as(REST), "claims/c1")));
+    await assertSucceeds(getDoc(doc(as(REST), "decisions/c1")));
+    await assertFails(getDoc(doc(as(REST2), "claims/c1")));
+  });
+  it("reading absent dispatch/handoff evidence succeeds (it just doesn't exist)", async () => {
+    await assertSucceeds(getDoc(doc(as(REST), "dispatch/o1")));
+    await assertSucceeds(getDoc(doc(as(REST), "handoff/o1")));
+  });
+  it("a deleted claim reads as permission-denied, not as missing (the web audit relies on this)", async () => {
+    await assertSucceeds(deleteDoc(doc(as(CUST), "claims/c1")));
+    await assertFails(getDoc(doc(as(REST), "claims/c1")));
+  });
+  it("first run: an unknown restaurant and a free pair code can be looked up", async () => {
+    await assertSucceeds(getDoc(doc(as("newbie"), "restaurants/newbie")));
+    await assertSucceeds(getDoc(doc(as("newbie"), "pairCodes/QQQQQQ")));
+    await assertSucceeds(getDoc(doc(as("newbie"), "users/newbie")));
+  });
+  it("re-accepting a newer Terms version updates the user doc", async () => {
+    await assertSucceeds(setDoc(doc(as(REST), "users/" + REST), { termsVersion: "2026-11-01", acceptedAt: serverTimestamp(), role: "restaurant" }));
+    await assertSucceeds(setDoc(doc(as(REST), "users/" + REST), { termsVersion: "2026-11-22", acceptedAt: serverTimestamp(), role: "restaurant" }));
+  });
+  it("restaurant reads its counter-evidence after answering", async () => {
+    const db = as(REST);
+    const b = writeBatch(db);
+    b.set(doc(db, "counterEvidence/c1"), {
+      claimId: "c1", restaurantId: REST, check: dispatchCheck, inferenceSource: "IN_CLOUD", imageSha256: SHA, photoRef: "counter/c1/photo.jpg", recordedAt: serverTimestamp(),
+    });
+    b.set(doc(db, "resolutions/c1"), {
+      claimId: "c1", restaurantId: REST, customerId: CUST, outcome: "settled", refundAmount: 108,
+      liability: { restaurant: 0, transit: 108, platform: 0 }, reasons: ["counter_evidence_clear"], policyVersion: "v1", createdAt: serverTimestamp(),
+    });
+    b.update(doc(db, "holds/c1"), { state: "resolved", resolvedAt: serverTimestamp() });
+    await assertSucceeds(b.commit());
+    await assertSucceeds(getDoc(doc(as(REST), "counterEvidence/c1")));
+    await assertSucceeds(getDoc(doc(as(CUST), "counterEvidence/c1")));
+    await assertFails(getDoc(doc(as(REST2), "counterEvidence/c1")));
   });
 });
 

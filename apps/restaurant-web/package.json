@@ -1,0 +1,30 @@
+{
+  "name": "@fairclaim/restaurant-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "Apache-2.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fairclaim/engine": "0.1.0",
+    "@fairclaim/schemas": "0.1.0",
+    "@fontsource-variable/archivo": "5.3.0",
+    "firebase": "13.4.0",
+    "qrcode-generator": "2.0.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsqr": "1.4.0",
+    "vite": "8.3.8"
+  }
+}
