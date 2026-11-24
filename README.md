@@ -80,7 +80,7 @@ sequenceDiagram
     C->>F: Handoff snap of the seal before opening (HandoffCheck)
     C->>F: Claim: live challenge photo (ChallengeCheck + moiré) and tapped crop (DamageCheck)
     C->>F: Cloud Review → engine decision (auto refund / hold / review)
-    R->>F: Replay audit; on a hold, accept the split or answer with counter-evidence
+    R->>F: Replay audit, then for a hold accept the split or send counter-evidence
 ```
 
 1. **Pairing.** Each restaurant web session creates its own sandbox restaurant with a seeded menu. The customer app scans
