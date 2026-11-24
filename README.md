@@ -77,6 +77,47 @@ npm run dev:web                                                      # http://lo
 - Emulator mode: `VITE_USE_EMULATORS=true` + `npm run emulators`; see [`dev/README.md`](dev/README.md) for the customer simulator.
 - `/terms` and `/privacy` are static pages (`terms.html`, `privacy.html`), served by Vercel with `cleanUrls`.
 
+## Customer Android app (`apps/customer-android/app`)
+
+Kotlin + Jetpack Compose + CameraX, `com.fairclaim.customer`, minSdk 26. It pairs with a restaurant (scan the web app's
+"Connect a phone" QR, or type the code), places a demo order, takes the **sealed-bag handoff snap** (`HandoffCheck`), files
+claims (`ChallengeCheck` on the full frame + `DamageCheck` on the tapped crop + FFT moiré, live camera only) and writes
+the decision with the Kotlin engine plus a cloud `Review` (EN / हिन्दी / தமிழ் explanations). Every AI result shows where
+it ran (`ON-DEVICE · Gemini Nano` or `CLOUD · Gemini`).
+
+- **Install the judge build:** download `app-release.apk` from [GitHub Releases](../../releases) (link added when published),
+  allow "Install unknown apps" for your browser/files app, open the APK. No Gemini Nano needed: on other phones every
+  check runs in the cloud with `gemini-3.5-flash-lite`. Settings → Diagnostics runs the App Check and model tests.
+- **Firebase AI Logic:** `firebase-ai` 18.2.0 + `firebase-ai-ondevice` 16.0.0-beta08, `PREFER_ON_DEVICE` with
+  `@Generable` structured output (KSP) for the photo checks, a separate `ONLY_IN_CLOUD` model for the one retry and for the
+  Review; every answer is re-validated by the engine's `parseModelOutput`. Limited-use App Check tokens.
+- **App Check:** debug provider in debug builds only (`app/src/debug`), Play Integrity in release (`app/src/release`).
+- **QR pairing** uses ZXing core, a classic barcode decoder (no model, no download).
+
+```powershell
+# one-time (see "Android setup" below for the console steps)
+cd apps\customer-android
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest      # debug APK + JVM unit tests
+.\gradlew.bat :app:assembleRelease                           # signed when the keystore properties are set
+npm run check:apk -- apps/customer-android/app/build/outputs/apk/release/app-release.apk   # from the repo root
+```
+
+### Android setup
+
+1. Firebase console → Project settings → add an Android app `com.fairclaim.customer`, add the debug **and** release
+   SHA-256 (and SHA-1) fingerprints, download `google-services.json` into `apps/customer-android/app/` (git-ignored).
+2. Authentication → Anonymous sign-in enabled (already on for the web app).
+3. App Check → Apps → the Android app → Play Integrity → register the **release** SHA-256 and set the distribution to
+   **outside Google Play** (PLAY_RECOGNIZED and LICENSED not required, minimum integrity = device integrity).
+   Debug builds print a debug secret to logcat (`DebugAppCheckProvider`): add it under *Manage debug tokens*.
+4. Release keystore (never committed): `keytool -genkeypair -v -keystore %USERPROFILE%\.android\fairclaim-release.jks -alias fairclaim -keyalg RSA -keysize 2048 -validity 3650`,
+   then in `apps/customer-android/local.properties` (git-ignored): `fairclaim.keystore`, `fairclaim.keystorePassword`,
+   `fairclaim.keyAlias`, `fairclaim.keyPassword` (or the `FAIRCLAIM_KEYSTORE*` / `FAIRCLAIM_KEY_*` environment variables).
+5. `fairclaim.webBaseUrl=https://<your-vercel-domain>` in the same `local.properties` makes the Terms/Privacy links open
+   the deployed pages (until then they point at a placeholder).
+6. Configuring the Gradle project needs an Android SDK: open `apps/customer-android` once in Android Studio (it writes
+   `local.properties` → `sdk.dir`) or set `ANDROID_HOME`; this applies to `npm run test:kotlin` too.
+
 ## Setup
 
 1. `npm run gen` regenerates validators, vectors and `remoteconfig.template.json` from `packages/schemas`.

@@ -61,18 +61,41 @@ export function dispatchGenerators(models: DispatchModels): { first: Generate; r
   return { first: generatorFor(models.hybrid), retry: generatorFor(models.cloud) };
 }
 
+/** Gemini cloud overload ("This model is currently experiencing high demand", HTTP 503): temporary. */
+export function isOverloaded(message: string): boolean {
+  return /high demand|overloaded|\bUNAVAILABLE\b|\b503\b/i.test(message);
+}
+
+const OVERLOAD_WAIT_MS = 2_000;
+
 export async function runDispatchCheck(
   gen: { first: Generate; retry: Generate },
   prompt: string,
   image: JpegImage,
+  sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
 ): Promise<DispatchCheckResult> {
   const failures: AttemptLog[] = [];
-  for (const [i, call] of [gen.first, gen.retry].entries()) {
+  // An overload gets a wait before the cloud retry and one extra cloud try: calling straight back
+  // usually hits the same spike. Any other failure keeps the plain "one retry" rule.
+  const calls = [gen.first, gen.retry];
+  let wait = OVERLOAD_WAIT_MS;
+  let overloadRetryLeft = 1;
+  for (let i = 0; i < calls.length; i++) {
+    const call = calls[i];
+    if (!call) break;
     let out: Generation;
     try {
       out = await call(prompt, image);
     } catch (e) {
-      failures.push({ source: null, error: e instanceof Error ? e.message : String(e) });
+      const error = e instanceof Error ? e.message : String(e);
+      failures.push({ source: null, error });
+      if (isOverloaded(error)) {
+        if (i === calls.length - 1 && overloadRetryLeft-- > 0) calls.push(gen.retry);
+        if (i < calls.length - 1) {
+          await sleep(wait);
+          wait *= 2;
+        }
+      }
       continue;
     }
     const parsed = parseModelOutput("dispatch", out.text);

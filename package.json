@@ -27,7 +27,8 @@
     "dev:web": "npm run dev -w @fairclaim/restaurant-web",
     "emulators": "firebase emulators:start --only auth,firestore,storage --project demo-fairclaim",
     "dev:customer": "node --experimental-transform-types dev/customer-sim.ts",
-    "check:dist": "node scripts/check-dist.mjs"
+    "check:dist": "node scripts/check-dist.mjs",
+    "check:apk": "node scripts/check-apk.mjs"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

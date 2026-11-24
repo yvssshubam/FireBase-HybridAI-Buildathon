@@ -53,6 +53,30 @@ describe("runDispatchCheck: validate, one retry in the cloud, then fail", () => 
     expect(r).toMatchObject({ ok: true, source: "IN_CLOUD", attempts: 2 });
   });
 
+  it("waits and tries the cloud again when Gemini is overloaded", async () => {
+    const overload = new Error("This model is currently experiencing high demand.");
+    const waits: number[] = [];
+    const retry = scripted([overload, good], "IN_CLOUD");
+    const r = await runDispatchCheck({ first: scripted([overload], "IN_CLOUD"), retry }, "p", image, async (ms) => {
+      waits.push(ms);
+    });
+    expect(r).toMatchObject({ ok: true, source: "IN_CLOUD", attempts: 3 });
+    expect(retry.calls).toBe(2);
+    expect(waits).toEqual([2000, 4000]);
+  });
+
+  it("stops after one extra try when the overload lasts", async () => {
+    const overload = new Error("503 UNAVAILABLE");
+    const waits: number[] = [];
+    const retry = scripted([overload, overload, overload], "IN_CLOUD");
+    const r = await runDispatchCheck({ first: scripted([overload], "IN_CLOUD"), retry }, "p", image, async (ms) => {
+      waits.push(ms);
+    });
+    expect(r.ok).toBe(false);
+    expect(retry.calls).toBe(2);
+    expect(waits).toEqual([2000, 4000]);
+  });
+
   it("gives up after the retry and never invents a result", async () => {
     const r = await runDispatchCheck({ first: scripted(["no json here"], "ON_DEVICE"), retry: scripted([new Error("quota")], "IN_CLOUD") }, "p", image);
     expect(r.ok).toBe(false);

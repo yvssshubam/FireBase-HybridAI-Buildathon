@@ -69,6 +69,11 @@ export function initServices(config: WebConfig): Services {
   const auth = getAuth(dataApp);
   const db = getFirestore(dataApp);
   const storage = getStorage(dataApp);
+  // Fail fast instead of the SDK defaults (10 min upload / 2 min other retries): on a project without a
+  // Storage bucket (Spark plan) a thumbnail upload otherwise blocks "Recording the dispatch…" for minutes,
+  // although the thumbnail is optional and the dispatch is saved without it.
+  storage.maxUploadRetryTime = 15_000;
+  storage.maxOperationRetryTime = 15_000;
   if (emulated) {
     connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
     connectFirestoreEmulator(db, "127.0.0.1", 8080);

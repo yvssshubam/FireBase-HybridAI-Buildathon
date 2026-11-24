@@ -5,9 +5,70 @@ kotlin = "2.4.20"
 kotlinxSerialization = "1.13.0"
 junit = "4.13.2"
 
+# --- Phase 2: customer app (checked Nov 23, 2026 against developer.android.com / firebase.google.com) ---
+# AGP 9.2.x is the newest line whose minimum Gradle (9.4.1) matches the wrapper; AGP 9.3+ needs Gradle 9.5+,
+# 9.4/9.5 need 9.6.0. AGP 9 has built-in Kotlin (no org.jetbrains.kotlin.android plugin).
+agp = "9.2.1"
+# KSP2 versions are no longer tied to the Kotlin version; 2.3.10+ fixes Kotlin 2.4 module names and AGP 9 built-in Kotlin.
+# TODO(verify): first Gradle sync confirms KSP 2.3.13 + KGP 2.4.20 + AGP 9.2.1 built-in Kotlin resolve together.
+ksp = "2.3.13"
+googleServices = "4.6.0"
+# Compose BOM 2026.08.00 = Compose 1.12.0 / Material3 1.4.0. The Nov '26 BOM (2026.11.01) needs compileSdk 37.1,
+# which AGP 9.2 doesn't support.
+composeBom = "2026.08.00"
+activityCompose = "1.13.0"
+lifecycle = "2.11.0"
+browser = "1.10.0"
+camerax = "1.6.2"
+coroutines = "1.11.0"
+# BoM 35.2.0 (Nov 11, 2026). The AI Logic libraries below are pinned on their own: firebase-ai-ondevice and the KSP
+# processor are not in the BoM, and the hybrid docs (updated 2026-11-18) pin these exact versions.
+firebaseBom = "35.2.0"
+firebaseAi = "18.2.0"
+firebaseAiOnDevice = "16.0.0-beta08"
+firebaseAiKsp = "17.0.0"
+firebaseAppCheck = "20.1.0"
+# QR decoding only (non-generative, pure Java, no Play services, no model download).
+zxing = "3.5.4"
+
 [libraries]
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerialization" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
+compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+compose-ui = { module = "androidx.compose.ui:ui" }
+compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+compose-foundation = { module = "androidx.compose.foundation:foundation" }
+compose-material3 = { module = "androidx.compose.material3:material3" }
+activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycle" }
+lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
+camera-core = { module = "androidx.camera:camera-core", version.ref = "camerax" }
+camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
+camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
+camera-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
+
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+firebase-storage = { module = "com.google.firebase:firebase-storage" }
+firebase-config = { module = "com.google.firebase:firebase-config" }
+firebase-appcheck = { module = "com.google.firebase:firebase-appcheck", version.ref = "firebaseAppCheck" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity", version.ref = "firebaseAppCheck" }
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug", version.ref = "firebaseAppCheck" }
+firebase-ai = { module = "com.google.firebase:firebase-ai", version.ref = "firebaseAi" }
+firebase-ai-ondevice = { module = "com.google.firebase:firebase-ai-ondevice", version.ref = "firebaseAiOnDevice" }
+firebase-ai-ksp = { module = "com.google.firebase:firebase-ai-ksp-processor", version.ref = "firebaseAiKsp" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

@@ -572,6 +572,46 @@ describe("restaurant web app reads (Phase 1 query patterns)", () => {
   });
 });
 
+describe("customer Android app reads + Delete my data (Phase 2 query patterns)", () => {
+  // apps/customer-android/.../data/Repository.kt: every list query filters on customerId == uid.
+  const byCustomer = (uid: string, coll: string, customerId = uid) => getDocs(query(collection(as(uid), coll), where("customerId", "==", customerId)));
+  beforeEach(async () => {
+    await seedHold(env, "c1");
+  });
+  it("customer lists its own orders, claims, decisions and holds", async () => {
+    for (const coll of ["orders", "claims", "decisions", "holds"]) {
+      await assertSucceeds(byCustomer(CUST, coll));
+    }
+  });
+  it("cannot list another customer's records, or list without the customerId filter", async () => {
+    for (const coll of ["orders", "claims", "decisions", "holds"]) {
+      await assertFails(byCustomer(MALLORY, coll, CUST));
+      await assertFails(getDocs(collection(as(CUST), coll)));
+    }
+  });
+  it("reads its own rate limit, the server challenge and absent evidence before claiming", async () => {
+    await assertSucceeds(getDoc(doc(as(CUST), `rateLimits/${CUST}`))); // absent on the first claim
+    await assertFails(getDoc(doc(as(MALLORY), `rateLimits/${CUST}`)));
+    await assertSucceeds(getDoc(doc(as(CUST), "handoff/o1")));
+    await assertSucceeds(getDoc(doc(as(CUST), "dispatch/o1")));
+    await assertSucceeds(getDoc(doc(as(CUST), "challenges/c1")));
+    await assertSucceeds(getDoc(doc(as(CUST), "config/policy")));
+  });
+  it("Delete my data: claims and the user doc go; orders, decisions, holds, challenges and markers stay", async () => {
+    await assertSucceeds(setDoc(doc(as(CUST), `users/${CUST}`), { termsVersion: "2026-11-22", acceptedAt: serverTimestamp(), role: "customer" }));
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(fs(ctx), "claimsByOrder/o1"), { claimId: "c1", customerId: CUST });
+      await setDoc(doc(fs(ctx), `rateLimits/${CUST}`), { lastClaimAt: ago(60_000), countToday: 1 });
+    });
+    await assertSucceeds(deleteDoc(doc(as(CUST), "claims/c1")));
+    await assertSucceeds(deleteDoc(doc(as(CUST), `users/${CUST}`)));
+    for (const path of ["orders/o1", "decisions/c1", "holds/c1", "challenges/c1", "claimsByOrder/o1", `rateLimits/${CUST}`]) {
+      await assertFails(deleteDoc(doc(as(CUST), path)));
+    }
+    await assertFails(deleteDoc(doc(as(MALLORY), `users/${CUST}`)));
+  });
+});
+
 describe("config", () => {
   it("is readable but never writable from clients", async () => {
     await assertSucceeds(getDoc(doc(as(CUST), "config/policy")));

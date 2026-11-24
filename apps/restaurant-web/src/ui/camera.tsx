@@ -50,6 +50,8 @@ export function useCamera(ai: AI) {
   // Called from a click: that user gesture also lets Chrome download Gemini Nano.
   const start = useCallback(async () => {
     prepareDeviceModel(dispatchModels(ai).hybrid);
+    stopCamera(streamRef.current); // a retake can start while a stream is still open
+    streamRef.current = null;
     setState({ kind: "starting" });
     try {
       const stream = await openCamera();
@@ -67,11 +69,15 @@ export function useCamera(ai: AI) {
 
   useEffect(() => () => stopCamera(streamRef.current), []);
 
+  // The frame is copied to a canvas, so the camera turns off at the shutter instead of staying on through
+  // the Gemini check and the save. A retake opens it again.
   const capture = useCallback((): Frame => {
     const v = videoRef.current;
     if (!v) throw new CameraError("The camera isn't open.");
-    return { canvas: grabFrame(v, PHOTO_MAX_SIDE), capturedAt: Date.now() };
-  }, []);
+    const frame = { canvas: grabFrame(v, PHOTO_MAX_SIDE), capturedAt: Date.now() };
+    stop();
+    return frame;
+  }, [stop]);
 
   return { setVideo, state, start, stop, capture };
 }

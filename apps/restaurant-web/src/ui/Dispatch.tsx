@@ -174,7 +174,14 @@ export function DispatchPanel({ services, order, onClose }: { services: Services
                 </button>
               )}
               {(shot || step.kind === "error") && (
-                <button type="button" className="btn" onClick={() => setStep({ kind: "aim" })}>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setStep({ kind: "aim" });
+                    void camera.start();
+                  }}
+                >
                   Retake
                 </button>
               )}
@@ -208,8 +215,8 @@ export function DispatchPanel({ services, order, onClose }: { services: Services
           </div>
 
           <div className="dispatch-view">
-            {/* Kept mounted (only hidden) so the live stream survives a retake. */}
-            <div className="dispatch-camera" hidden={shot !== null}>
+            {/* Kept mounted (only hidden) so the <video> element stays attached for the next start. */}
+            <div className="dispatch-camera" hidden={shot !== null || busy}>
               <CameraView videoRef={camera.setVideo} state={camera.state} onStart={() => void camera.start()} startLabel="Open the camera" />
             </div>
             {shot && <img className="shot-preview" src={shot.previewUrl} alt="Dispatch photo just checked" />}

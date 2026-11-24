@@ -29,3 +29,8 @@ captures/
 
 .DS_Store
 rules-output.txt
+
+# Android build outputs (APKs go to GitHub Releases, not git)
+*.apk
+*.aab
+apps/customer-android/app/release/

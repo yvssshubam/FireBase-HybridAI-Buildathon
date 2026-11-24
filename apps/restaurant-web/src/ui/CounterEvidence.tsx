@@ -104,7 +104,7 @@ export function CounterEvidence({ services, uid, policy, view, docs }: { service
     <section className="block counter">
       <h3>Counter-evidence photo</h3>
       <p className="muted small">The customer can see this photo. It's deleted after 3 days.</p>
-      <div hidden={shot !== null}>
+      <div hidden={shot !== null || step.kind === "checking"}>
         <CameraView videoRef={camera.setVideo} state={camera.state} onStart={() => void camera.start()} startLabel="Open the camera" />
       </div>
       {shot && <img className="shot-preview" src={shot.previewUrl} alt="Counter-evidence photo just taken" />}
@@ -147,7 +147,14 @@ export function CounterEvidence({ services, uid, policy, view, docs }: { service
           </button>
         )}
         {(planned || step.kind === "error") && (
-          <button type="button" className="btn" onClick={() => setStep({ kind: "aim" })}>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setStep({ kind: "aim" });
+              void camera.start();
+            }}
+          >
             Retake
           </button>
         )}
